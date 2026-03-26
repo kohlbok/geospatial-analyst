@@ -1,8 +1,9 @@
 {
   "screening": {
     "min_head_m": 100,
-    "max_distance_head_ratio": 10,
+    "max_distance_head_ratio": 40,
     "min_reservoir_capacity_mcm": 1,
+    "max_distance_km": 30,
     "min_fill_rate_pct": 10,
     "ideal_fill_rate_pct": 40,
     "max_tunnel_length_km": 10,
@@ -14,10 +15,10 @@
     "gravity_m_s2": 9.81
   },
   "cost": {
-    "battery_benchmark_usd_per_mwh": 100000,
+    "battery_benchmark_usd_per_mwh": 300,
     "psh_benchmark_usd_per_mwh_low": 150,
     "psh_benchmark_usd_per_mwh_high": 250,
-    "depreciation_years": 30
+    "depreciation_years": 40
   },
   "scoring": {
     "weights_default": {
@@ -45,19 +46,22 @@
   "sensitivity": {
     "tight": {
       "min_head_m": 150,
-      "max_distance_head_ratio": 8,
+      "max_distance_head_ratio": 30,
+      "max_distance_km": 20,
       "min_fill_rate_pct": 20,
       "min_reservoir_capacity_mcm": 2
     },
     "standard": {
       "min_head_m": 100,
-      "max_distance_head_ratio": 10,
+      "max_distance_head_ratio": 40,
+      "max_distance_km": 30,
       "min_fill_rate_pct": 10,
       "min_reservoir_capacity_mcm": 1
     },
     "relaxed": {
       "min_head_m": 75,
-      "max_distance_head_ratio": 12,
+      "max_distance_head_ratio": 50,
+      "max_distance_km": 40,
       "min_fill_rate_pct": 5,
       "min_reservoir_capacity_mcm": 0.5
     }
