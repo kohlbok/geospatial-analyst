@@ -1,0 +1,117 @@
+{
+  "screening": {
+    "min_head_m": 100,
+    "max_distance_head_ratio": 10,
+    "min_reservoir_capacity_mcm": 1,
+    "min_fill_rate_pct": 10,
+    "ideal_fill_rate_pct": 40,
+    "max_tunnel_length_km": 10,
+    "protected_area_buffer_km": 1
+  },
+  "energy": {
+    "round_trip_efficiency": 0.78,
+    "water_density_kg_m3": 1000,
+    "gravity_m_s2": 9.81
+  },
+  "cost": {
+    "battery_benchmark_usd_per_mwh": 100000,
+    "psh_benchmark_usd_per_mwh_low": 150,
+    "psh_benchmark_usd_per_mwh_high": 250,
+    "depreciation_years": 30
+  },
+  "scoring": {
+    "weights_default": {
+      "cost_competitiveness": 0.30,
+      "energy_potential": 0.25,
+      "grid_proximity": 0.20,
+      "reservoir_suitability": 0.15,
+      "regulatory_risk": 0.10
+    },
+    "weights_cost_focused": {
+      "cost_competitiveness": 0.45,
+      "energy_potential": 0.20,
+      "grid_proximity": 0.15,
+      "reservoir_suitability": 0.10,
+      "regulatory_risk": 0.10
+    },
+    "weights_energy_focused": {
+      "cost_competitiveness": 0.20,
+      "energy_potential": 0.40,
+      "grid_proximity": 0.15,
+      "reservoir_suitability": 0.15,
+      "regulatory_risk": 0.10
+    }
+  },
+  "sensitivity": {
+    "tight": {
+      "min_head_m": 150,
+      "max_distance_head_ratio": 8,
+      "min_fill_rate_pct": 20,
+      "min_reservoir_capacity_mcm": 2
+    },
+    "standard": {
+      "min_head_m": 100,
+      "max_distance_head_ratio": 10,
+      "min_fill_rate_pct": 10,
+      "min_reservoir_capacity_mcm": 1
+    },
+    "relaxed": {
+      "min_head_m": 75,
+      "max_distance_head_ratio": 12,
+      "min_fill_rate_pct": 5,
+      "min_reservoir_capacity_mcm": 0.5
+    }
+  },
+  "output": {
+    "top_n_detailed": 10,
+    "top_n_terrain_profiles": 20,
+    "top_n_ranked_list": 100
+  },
+  "morocco_bbox": {
+    "lat_min": 27.0,
+    "lat_max": 36.0,
+    "lon_min": -13.0,
+    "lon_max": -1.0
+  },
+  "data_sources": {
+    "hydrolakes": {
+      "name": "HydroLAKES",
+      "url": "https://www.hydrosheds.org/products/hydrolakes",
+      "format": "shapefile",
+      "fields": ["coordinates", "surface_area", "volume", "elevation", "shoreline_length"]
+    },
+    "grand": {
+      "name": "GRanD v1.3",
+      "url": "https://www.globaldamwatch.org/grand",
+      "format": "shapefile",
+      "fields": ["dam_height", "capacity", "year_built", "purpose", "owner"]
+    },
+    "gdat": {
+      "name": "GDAT",
+      "url": "https://zenodo.org/record/6163413",
+      "format": "csv/shapefile",
+      "fields": ["coordinates", "catchment_area"]
+    },
+    "fao_aquastat": {
+      "name": "FAO AQUASTAT",
+      "url": "https://www.fao.org/aquastat",
+      "format": "excel",
+      "fields": ["purpose", "region"]
+    },
+    "srtm": {
+      "name": "NASA SRTM 30m",
+      "url": "https://earthexplorer.usgs.gov",
+      "format": "geotiff",
+      "resolution_m": 30
+    },
+    "osm": {
+      "name": "OpenStreetMap",
+      "fields": ["power_grid", "substations", "urban_areas", "roads"]
+    },
+    "wdpa": {
+      "name": "World Database on Protected Areas",
+      "url": "https://www.protectedplanet.net",
+      "format": "shapefile"
+    }
+  }
+}
