@@ -9,13 +9,13 @@ log = logging.getLogger(__name__)
 
 def calculate_energy(head_m, volume_m3, efficiency=None):
     config = load_config()
-    energy_cfg = config["energy"]
+    physics = config.get("physics", config.get("energy", {}))
 
     if efficiency is None:
-        efficiency = energy_cfg["round_trip_efficiency"]
+        efficiency = physics.get("round_trip_efficiency", 0.78)
 
-    density = energy_cfg["water_density_kg_m3"]
-    gravity = energy_cfg["gravity_m_s2"]
+    density = physics.get("water_density_kg_m3", 1000)
+    gravity = physics.get("gravity_m_s2", 9.81)
 
     energy_joules = head_m * volume_m3 * density * gravity * efficiency
     energy_mwh = energy_joules / 3_600_000_000

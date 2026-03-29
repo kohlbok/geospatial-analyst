@@ -1,5 +1,4 @@
-data/raw/
-data/geospatial/
+data/.cache/
 output/
 __pycache__/
 *.pyc
@@ -7,3 +6,4 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+.DS_Store

@@ -1,0 +1,1911 @@
+[
+  {
+    "id": "MAR-001",
+    "name": "Al Wahda",
+    "lat": 34.594,
+    "lon": -5.1932,
+    "elevation_m": 145,
+    "height_m": 88.0,
+    "capacity_mcm": 3730.0,
+    "surface_area_km2": 123.0,
+    "year_built": 1996,
+    "purpose": [
+      "irrigation",
+      "hydropower"
+    ],
+    "river": "Ouergha",
+    "grid_distance_km": 0.7,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-002",
+    "name": "Al Massira",
+    "lat": 32.4747,
+    "lon": -7.6372,
+    "elevation_m": 282,
+    "height_m": 82.0,
+    "capacity_mcm": 2760.0,
+    "surface_area_km2": 14.1,
+    "year_built": 1979,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Oum Er R'Bia",
+    "grid_distance_km": 0.3,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-003",
+    "name": "Bin El Ouidane",
+    "lat": 32.1067,
+    "lon": -6.4639,
+    "elevation_m": 778,
+    "height_m": 133.0,
+    "capacity_mcm": 1484.0,
+    "surface_area_km2": 15.0,
+    "year_built": 1953,
+    "purpose": [
+      "irrigation",
+      "hydropower"
+    ],
+    "river": "El Abid",
+    "grid_distance_km": 12.0,
+    "nearest_substation": "Poste Usine r\u00e9versible I",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-004",
+    "name": "Idriss 1\u00b0",
+    "lat": 34.1611,
+    "lon": -4.7489,
+    "elevation_m": 206,
+    "height_m": 72.0,
+    "capacity_mcm": 1217.0,
+    "surface_area_km2": 42.0,
+    "year_built": 1973,
+    "purpose": [
+      "irrigation",
+      "hydropower"
+    ],
+    "river": "Inaouene",
+    "grid_distance_km": 19.7,
+    "nearest_substation": "poste 225/60/11 kV El Ouali",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-005",
+    "name": "Sidi Mohamed Ben Abdellah",
+    "lat": 33.9378,
+    "lon": -6.7497,
+    "elevation_m": 59,
+    "height_m": 105.0,
+    "capacity_mcm": 1025.0,
+    "surface_area_km2": 2.8,
+    "year_built": 1974,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Bouregreg",
+    "grid_distance_km": 1.3,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-006",
+    "name": "Oued El Makhazine",
+    "lat": 34.9417,
+    "lon": -5.8394,
+    "elevation_m": 59,
+    "height_m": 67.0,
+    "capacity_mcm": 807.0,
+    "surface_area_km2": 4.1,
+    "year_built": 1979,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Loukkos",
+    "grid_distance_km": 9.7,
+    "nearest_substation": "poste O.N.C.F. Arbaoua",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-007",
+    "name": "Ahmed Al Hansali",
+    "lat": 32.6943,
+    "lon": -5.8879,
+    "elevation_m": 616,
+    "height_m": 101.0,
+    "capacity_mcm": 740.0,
+    "surface_area_km2": null,
+    "year_built": 2001,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Oum Er Rbia",
+    "grid_distance_km": 27.1,
+    "nearest_substation": "poste Cimat",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-008",
+    "name": "Mohammed V",
+    "lat": 34.6631,
+    "lon": -2.9383,
+    "elevation_m": 207,
+    "height_m": 64.0,
+    "capacity_mcm": 725.0,
+    "surface_area_km2": 20.0,
+    "year_built": 1967,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Moulouya",
+    "grid_distance_km": 29.4,
+    "nearest_substation": "Poste 60/22 kV Moulouya",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-009",
+    "name": "M'dez",
+    "lat": 33.98,
+    "lon": -4.28,
+    "elevation_m": 1065,
+    "height_m": 109.0,
+    "capacity_mcm": 700.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [],
+    "river": null,
+    "grid_distance_km": 24.2,
+    "nearest_substation": "poste 60/22 KV Oued Amlil",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-010",
+    "name": "Mansour Eddahbi",
+    "lat": 30.9167,
+    "lon": -6.7667,
+    "elevation_m": 1105,
+    "height_m": 70.0,
+    "capacity_mcm": 592.0,
+    "surface_area_km2": 4.76,
+    "year_built": 1972,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "flood_control",
+      "hydropower"
+    ],
+    "river": "Draa",
+    "grid_distance_km": 8.0,
+    "nearest_substation": "Poste 225/60 kV Ouarzazate",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-011",
+    "name": "Ouljet Essoltane",
+    "lat": 33.656,
+    "lon": -5.8857,
+    "elevation_m": 314,
+    "height_m": 98.0,
+    "capacity_mcm": 510.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [],
+    "river": null,
+    "grid_distance_km": 22.8,
+    "nearest_substation": "poste 60/22 kVKhemisset",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-012",
+    "name": "Dar Khrofa",
+    "lat": 35.03,
+    "lon": -5.63,
+    "elevation_m": 63,
+    "height_m": 53.0,
+    "capacity_mcm": 480.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "flood_control"
+    ],
+    "river": null,
+    "grid_distance_km": 25.1,
+    "nearest_substation": "Poste Ouzanne 60kv",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-013",
+    "name": "Sidi Said",
+    "lat": 32.7938,
+    "lon": -4.7692,
+    "elevation_m": 1302,
+    "height_m": 124.0,
+    "capacity_mcm": 400.0,
+    "surface_area_km2": 1.27,
+    "year_built": 2006,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "flood_control",
+      "hydropower"
+    ],
+    "river": "Moulouya",
+    "grid_distance_km": 12.3,
+    "nearest_substation": "poste 225/60 KV de Mibladen",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-014",
+    "name": "Hassan Addakhil",
+    "lat": 31.9939,
+    "lon": -4.4617,
+    "elevation_m": 1112,
+    "height_m": 85.0,
+    "capacity_mcm": 369.0,
+    "surface_area_km2": 1.9,
+    "year_built": 1971,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "flood_control"
+    ],
+    "river": "Ziz",
+    "grid_distance_km": 3.6,
+    "nearest_substation": "Poste 225/60 kV d\u2019Errachidia",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-015",
+    "name": "Youssf Ben Tachfine",
+    "lat": 29.8456,
+    "lon": -9.4947,
+    "elevation_m": 114,
+    "height_m": 85.0,
+    "capacity_mcm": 320.0,
+    "surface_area_km2": 1.38,
+    "year_built": 1972,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Massa",
+    "grid_distance_km": 0.3,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-016",
+    "name": "Asfalou",
+    "lat": 34.6121,
+    "lon": -4.5746,
+    "elevation_m": 389,
+    "height_m": 112.0,
+    "capacity_mcm": 317.0,
+    "surface_area_km2": null,
+    "year_built": 1999,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Asfalou",
+    "grid_distance_km": 18.5,
+    "nearest_substation": "Poste Taounate",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-017",
+    "name": "Neuf Avril 1947",
+    "lat": 34.23,
+    "lon": -2.17,
+    "elevation_m": 913,
+    "height_m": 52.0,
+    "capacity_mcm": 300.0,
+    "surface_area_km2": 1.62,
+    "year_built": 1995,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Hachef",
+    "grid_distance_km": 9.2,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-018",
+    "name": "El Kansera",
+    "lat": 34.0422,
+    "lon": -5.9067,
+    "elevation_m": 127,
+    "height_m": 68.0,
+    "capacity_mcm": 297.0,
+    "surface_area_km2": 1.8,
+    "year_built": 1935,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Beht",
+    "grid_distance_km": 23.9,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-019",
+    "name": "Hassan II",
+    "lat": 32.01,
+    "lon": -3.68,
+    "elevation_m": 1050,
+    "height_m": 83.0,
+    "capacity_mcm": 275.0,
+    "surface_area_km2": 0.78,
+    "year_built": 1998,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Oued Za",
+    "grid_distance_km": 11.8,
+    "nearest_substation": "poste 60/22 Kv de Boudnib",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-020",
+    "name": "Hassan 1\u00b0",
+    "lat": 31.8458,
+    "lon": -7.0783,
+    "elevation_m": 642,
+    "height_m": 145.0,
+    "capacity_mcm": 273.0,
+    "surface_area_km2": 6.7,
+    "year_built": 1986,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Lakhdar",
+    "grid_distance_km": 18.0,
+    "nearest_substation": "Poste Hassan 1",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-021",
+    "name": "Abdelmoumen",
+    "lat": 30.675,
+    "lon": -9.1994,
+    "elevation_m": 625,
+    "height_m": 94.0,
+    "capacity_mcm": 216.0,
+    "surface_area_km2": 0.75,
+    "year_built": 1981,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Issen",
+    "grid_distance_km": 3.7,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-022",
+    "name": "Moulay Youssef",
+    "lat": 31.6453,
+    "lon": -7.2611,
+    "elevation_m": 880,
+    "height_m": 100.0,
+    "capacity_mcm": 197.0,
+    "surface_area_km2": 0.49,
+    "year_built": 1969,
+    "purpose": [
+      "irrigation",
+      "hydropower"
+    ],
+    "river": "Tessaout",
+    "grid_distance_km": 0.3,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-023",
+    "name": "Sidi Chahed",
+    "lat": 34.08,
+    "lon": -5.3,
+    "elevation_m": 301,
+    "height_m": 51.0,
+    "capacity_mcm": 170.0,
+    "surface_area_km2": 1.08,
+    "year_built": 1996,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Mikk\u00e8s",
+    "grid_distance_km": 17.4,
+    "nearest_substation": "poste 225/60 KV de Douyet",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-024",
+    "name": "Oued Martil",
+    "lat": 35.4768,
+    "lon": -5.4335,
+    "elevation_m": 69,
+    "height_m": 100.0,
+    "capacity_mcm": 120.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": null,
+    "grid_distance_km": 15.5,
+    "nearest_substation": "Poste source 60/22 kV Boussafou",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-025",
+    "name": "Aoulouz",
+    "lat": 29.7889,
+    "lon": -9.4333,
+    "elevation_m": 159,
+    "height_m": 79.0,
+    "capacity_mcm": 110.0,
+    "surface_area_km2": 0.51,
+    "year_built": 1991,
+    "purpose": [
+      "irrigation",
+      "flood_control"
+    ],
+    "river": "Souss-Massa",
+    "grid_distance_km": 8.8,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-026",
+    "name": "Moulay Abdellah",
+    "lat": 30.7578,
+    "lon": -9.6882,
+    "elevation_m": 161,
+    "height_m": 70.0,
+    "capacity_mcm": 110.0,
+    "surface_area_km2": null,
+    "year_built": 2002,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Tamri",
+    "grid_distance_km": 23.6,
+    "nearest_substation": "poste source 60/22 KV de Taghazout",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-027",
+    "name": "Saquia Al Hamra",
+    "lat": 27.16,
+    "lon": -13.18,
+    "elevation_m": 15,
+    "height_m": 16.0,
+    "capacity_mcm": 110.0,
+    "surface_area_km2": 3.0,
+    "year_built": 1995,
+    "purpose": [
+      "flood_control"
+    ],
+    "river": "Saq. Al Hamra",
+    "grid_distance_km": 2.7,
+    "nearest_substation": "Poste Layoune 1",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-028",
+    "name": "Lalla Takerkoust",
+    "lat": 31.355,
+    "lon": -8.1358,
+    "elevation_m": 646,
+    "height_m": 71.0,
+    "capacity_mcm": 96.0,
+    "surface_area_km2": 0.6,
+    "year_built": 1935,
+    "purpose": [
+      "irrigation",
+      "hydropower"
+    ],
+    "river": "N'tis",
+    "grid_distance_km": 18.3,
+    "nearest_substation": "poste 60/22kv d'Asni",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-029",
+    "name": "Imfout",
+    "lat": 32.7256,
+    "lon": -7.9267,
+    "elevation_m": 178,
+    "height_m": 50.0,
+    "capacity_mcm": 83.0,
+    "surface_area_km2": 0.88,
+    "year_built": 1944,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Oum Er R'Bia",
+    "grid_distance_km": 22.4,
+    "nearest_substation": "Poste 225/60 KV Chiker",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-030",
+    "name": "Allal Al Fassi",
+    "lat": 33.9319,
+    "lon": -4.6761,
+    "elevation_m": 426,
+    "height_m": 61.0,
+    "capacity_mcm": 81.5,
+    "surface_area_km2": 2.5,
+    "year_built": 1990,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Sebou",
+    "grid_distance_km": 3.2,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-031",
+    "name": "Touizgui Rem",
+    "lat": 30.12,
+    "lon": -6.53,
+    "elevation_m": 1199,
+    "height_m": 18.0,
+    "capacity_mcm": 78.0,
+    "surface_area_km2": null,
+    "year_built": 2007,
+    "purpose": [
+      "irrigation",
+      "livestock"
+    ],
+    "river": "Bou Legmaden et Tigzert",
+    "grid_distance_km": 27.8,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": null
+  },
+  {
+    "id": "MAR-032",
+    "name": "El Maleh",
+    "lat": 33.1,
+    "lon": -8.1,
+    "elevation_m": 117,
+    "height_m": 49.0,
+    "capacity_mcm": 75.0,
+    "surface_area_km2": null,
+    "year_built": 2009,
+    "purpose": [],
+    "river": "El Maleh",
+    "grid_distance_km": 38.3,
+    "nearest_substation": "poste Ghanem",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-033",
+    "name": "Yaacoub El Mansour",
+    "lat": 33.79,
+    "lon": -5.85,
+    "elevation_m": 343,
+    "height_m": 70.0,
+    "capacity_mcm": 70.0,
+    "surface_area_km2": null,
+    "year_built": 2008,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Nfis",
+    "grid_distance_km": 16.4,
+    "nearest_substation": "poste 60/22 kVKhemisset",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-034",
+    "name": "Zerrar",
+    "lat": 31.22,
+    "lon": -9.28,
+    "elevation_m": 1016,
+    "height_m": 73.0,
+    "capacity_mcm": 65.0,
+    "surface_area_km2": null,
+    "year_built": 2013,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": null,
+    "grid_distance_km": 36.2,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-035",
+    "name": "Sahla",
+    "lat": 34.8,
+    "lon": -4.53,
+    "elevation_m": 1569,
+    "height_m": 55.0,
+    "capacity_mcm": 62.0,
+    "surface_area_km2": 0.43,
+    "year_built": 1994,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Sahla",
+    "grid_distance_km": 13.3,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-036",
+    "name": "Tamesna",
+    "lat": 34.1,
+    "lon": -4.16,
+    "elevation_m": 1037,
+    "height_m": 66.0,
+    "capacity_mcm": 56.0,
+    "surface_area_km2": null,
+    "year_built": 2005,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "flood_control",
+      "livestock"
+    ],
+    "river": "Zamrine",
+    "grid_distance_km": 12.7,
+    "nearest_substation": "poste 60/22 KV Oued Amlil",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-037",
+    "name": "Bouhouda",
+    "lat": 34.55,
+    "lon": -4.52,
+    "elevation_m": 511,
+    "height_m": 55.0,
+    "capacity_mcm": 55.5,
+    "surface_area_km2": 0.34,
+    "year_built": 1998,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Sra",
+    "grid_distance_km": 18.8,
+    "nearest_substation": "Poste Taounate",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-038",
+    "name": "Mokhtar Soussi",
+    "lat": 30.36,
+    "lon": -8.42,
+    "elevation_m": 1010,
+    "height_m": 60.0,
+    "capacity_mcm": 50.0,
+    "surface_area_km2": 0.23,
+    "year_built": 2001,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Choukoukane",
+    "grid_distance_km": 27.4,
+    "nearest_substation": "Poste 60/22 Kv Igli",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-039",
+    "name": "Tamalout",
+    "lat": 32.49,
+    "lon": -5.15,
+    "elevation_m": 1861,
+    "height_m": 61.0,
+    "capacity_mcm": 50.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": null,
+    "grid_distance_km": 30.3,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": null
+  },
+  {
+    "id": "MAR-040",
+    "name": "Ibn Batouta",
+    "lat": 35.64,
+    "lon": -5.7322,
+    "elevation_m": 43,
+    "height_m": 30.0,
+    "capacity_mcm": 43.6,
+    "surface_area_km2": 0.6,
+    "year_built": 1977,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Mharhar",
+    "grid_distance_km": 6.5,
+    "nearest_substation": "Poste 400kV de Melloussa",
+    "substation_voltage_kv": 400.0
+  },
+  {
+    "id": "MAR-041",
+    "name": "Mohamed Ben Abdelkrim El Khattabi",
+    "lat": 35.0856,
+    "lon": -3.8192,
+    "elevation_m": 126,
+    "height_m": 40.0,
+    "capacity_mcm": 43.0,
+    "surface_area_km2": 0.39,
+    "year_built": 1981,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Neckor",
+    "grid_distance_km": 6.3,
+    "nearest_substation": "Poste 225/60/22 kV Imzouren",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-042",
+    "name": "Smir",
+    "lat": 35.72,
+    "lon": -5.36,
+    "elevation_m": 58,
+    "height_m": 45.0,
+    "capacity_mcm": 43.0,
+    "surface_area_km2": 0.33,
+    "year_built": 1991,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Smir",
+    "grid_distance_km": 13.3,
+    "nearest_substation": "poste 60/22 kV de Taghramt",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-043",
+    "name": "Mechra Homadi",
+    "lat": 34.7367,
+    "lon": -2.805,
+    "elevation_m": 156,
+    "height_m": 57.0,
+    "capacity_mcm": 42.0,
+    "surface_area_km2": 0.28,
+    "year_built": 1955,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Moulouya",
+    "grid_distance_km": 14.8,
+    "nearest_substation": "Poste 60/22 kV Moulouya",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-044",
+    "name": "Gard de Sebou",
+    "lat": 33.7667,
+    "lon": -4.5611,
+    "elevation_m": 726,
+    "height_m": 18.0,
+    "capacity_mcm": 40.0,
+    "surface_area_km2": 0.7,
+    "year_built": 1991,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Sebou",
+    "grid_distance_km": 18.2,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-045",
+    "name": "Bab Louta",
+    "lat": 34.19,
+    "lon": -4.09,
+    "elevation_m": 569,
+    "height_m": 54.0,
+    "capacity_mcm": 37.0,
+    "surface_area_km2": null,
+    "year_built": 1999,
+    "purpose": [],
+    "river": "Laoutar",
+    "grid_distance_km": 8.6,
+    "nearest_substation": "poste 60/22 kV Taza I",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-046",
+    "name": "Koudiat El Garn",
+    "lat": 34.18,
+    "lon": -4.78,
+    "elevation_m": 162,
+    "height_m": 54.5,
+    "capacity_mcm": 33.0,
+    "surface_area_km2": null,
+    "year_built": 2012,
+    "purpose": [
+      "flood_control"
+    ],
+    "river": "Oued Tamadroust",
+    "grid_distance_km": 21.6,
+    "nearest_substation": "poste 225/60/11 kV El Ouali",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-047",
+    "name": "Moulay Hassan Bel Medhi",
+    "lat": 33.47,
+    "lon": -4.34,
+    "elevation_m": 1473,
+    "height_m": 49.0,
+    "capacity_mcm": 31.0,
+    "surface_area_km2": null,
+    "year_built": 2005,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "flood_control"
+    ],
+    "river": "Raouz",
+    "grid_distance_km": 40.1,
+    "nearest_substation": "poste 60/22 kV Boumalene",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-048",
+    "name": "Al Thelat",
+    "lat": 35.2453,
+    "lon": -5.2911,
+    "elevation_m": 265,
+    "height_m": 36.0,
+    "capacity_mcm": 30.0,
+    "surface_area_km2": 0.2,
+    "year_built": 1935,
+    "purpose": [
+      "irrigation",
+      "hydropower"
+    ],
+    "river": "Lao",
+    "grid_distance_km": 4.1,
+    "nearest_substation": "Poste 225/60/11 kv Chefchaoun",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-049",
+    "name": "Tanger Med",
+    "lat": 35.8,
+    "lon": -5.5,
+    "elevation_m": 249,
+    "height_m": 80.5,
+    "capacity_mcm": 25.0,
+    "surface_area_km2": null,
+    "year_built": 2008,
+    "purpose": [
+      "water_supply",
+      "flood_control"
+    ],
+    "river": "Rmel",
+    "grid_distance_km": 3.8,
+    "nearest_substation": "poste 60/22 kV de Taghramt",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-050",
+    "name": "Taskourt",
+    "lat": 31.39,
+    "lon": -8.47,
+    "elevation_m": 563,
+    "height_m": 75.0,
+    "capacity_mcm": 25.0,
+    "surface_area_km2": null,
+    "year_built": 2012,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "flood_control"
+    ],
+    "river": "Assif Al Mal",
+    "grid_distance_km": 7.4,
+    "nearest_substation": "Poste 60/22 kv Majjat",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-051",
+    "name": "Sfeissif",
+    "lat": 30.75,
+    "lon": -7.29,
+    "elevation_m": 1590,
+    "height_m": 28.0,
+    "capacity_mcm": 20.0,
+    "surface_area_km2": null,
+    "year_built": 2011,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": null,
+    "grid_distance_km": 42.9,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-052",
+    "name": "Mellah",
+    "lat": 33.5044,
+    "lon": -7.3314,
+    "elevation_m": 107,
+    "height_m": 33.0,
+    "capacity_mcm": 18.0,
+    "surface_area_km2": 0.24,
+    "year_built": 1931,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Mellah",
+    "grid_distance_km": 8.6,
+    "nearest_substation": "Poste 400/225kV Mediouna",
+    "substation_voltage_kv": 400.0
+  },
+  {
+    "id": "MAR-053",
+    "name": "Sidi Mohamed Ben Slimane El Jazouli",
+    "lat": 30.54,
+    "lon": -9.08,
+    "elevation_m": 218,
+    "height_m": 60.0,
+    "capacity_mcm": 17.0,
+    "surface_area_km2": null,
+    "year_built": 2005,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Igouzoulane",
+    "grid_distance_km": 14.8,
+    "nearest_substation": "Poste 225/60 KV GLALCHAL",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-054",
+    "name": "Al Himer",
+    "lat": 33.39,
+    "lon": -3.74,
+    "elevation_m": 821,
+    "height_m": 38.5,
+    "capacity_mcm": 14.0,
+    "surface_area_km2": null,
+    "year_built": 2008,
+    "purpose": [
+      "flood_control"
+    ],
+    "river": "Al Himer",
+    "grid_distance_km": 48.5,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-055",
+    "name": "Timkit",
+    "lat": 32.19,
+    "lon": -5.7,
+    "elevation_m": 2324,
+    "height_m": 56.0,
+    "capacity_mcm": 14.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": null,
+    "grid_distance_km": 58.9,
+    "nearest_substation": "poste Cimat",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-056",
+    "name": "Ait Messaoud",
+    "lat": 31.6,
+    "lon": -7.54,
+    "elevation_m": 761,
+    "height_m": 34.0,
+    "capacity_mcm": 13.2,
+    "surface_area_km2": null,
+    "year_built": 2003,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Oum Er Rbia",
+    "grid_distance_km": 21.5,
+    "nearest_substation": "Poste 225/60 kV Tazart",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-057",
+    "name": "Mazer",
+    "lat": 34.02,
+    "lon": -5.05,
+    "elevation_m": 391,
+    "height_m": 39.0,
+    "capacity_mcm": 13.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [
+      "flood_control"
+    ],
+    "river": "Mazer",
+    "grid_distance_km": 1.3,
+    "nearest_substation": "Poste Fes Ouest 60Kv",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-058",
+    "name": "Nakhla",
+    "lat": 35.4456,
+    "lon": -5.4083,
+    "elevation_m": 181,
+    "height_m": 46.0,
+    "capacity_mcm": 13.0,
+    "surface_area_km2": 0.07,
+    "year_built": 1961,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Nakhla",
+    "grid_distance_km": 17.7,
+    "nearest_substation": "Poste source 60/22 kV Boussafou",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-059",
+    "name": "Imin El Kheng",
+    "lat": 30.82,
+    "lon": -8.78,
+    "elevation_m": 2243,
+    "height_m": 39.0,
+    "capacity_mcm": 12.0,
+    "surface_area_km2": 0.17,
+    "year_built": 1993,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Berhil",
+    "grid_distance_km": 34.6,
+    "nearest_substation": "Poste 60/22 Kv Igli",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-060",
+    "name": "Injil",
+    "lat": 34.58,
+    "lon": -3.87,
+    "elevation_m": 914,
+    "height_m": 36.0,
+    "capacity_mcm": 12.0,
+    "surface_area_km2": 0.3,
+    "year_built": 1995,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Taghoucht",
+    "grid_distance_km": 10.6,
+    "nearest_substation": "poste 60/22 kV d'Aknoul",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-061",
+    "name": "Moulay Boucheta",
+    "lat": 35.28,
+    "lon": -5.21,
+    "elevation_m": 886,
+    "height_m": 57.5,
+    "capacity_mcm": 11.6,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": null,
+    "grid_distance_km": 12.1,
+    "nearest_substation": "Poste 225/60/11 kv Chefchaoun",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-062",
+    "name": "Sidi Yahya",
+    "lat": 34.37,
+    "lon": -2.62,
+    "elevation_m": 951,
+    "height_m": 30.0,
+    "capacity_mcm": 11.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": null,
+    "grid_distance_km": 33.0,
+    "nearest_substation": "poste de Bourdim 400/225kv",
+    "substation_voltage_kv": 400.0
+  },
+  {
+    "id": "MAR-063",
+    "name": "Sidi Abdellah",
+    "lat": 33.68,
+    "lon": -6.79,
+    "elevation_m": 277,
+    "height_m": null,
+    "capacity_mcm": 10.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [],
+    "river": null,
+    "grid_distance_km": 21.3,
+    "nearest_substation": "poste 225/60/22 kV Zaer",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-064",
+    "name": "Daourat",
+    "lat": 32.9358,
+    "lon": -8.0636,
+    "elevation_m": 93,
+    "height_m": 40.0,
+    "capacity_mcm": 9.5,
+    "surface_area_km2": 0.26,
+    "year_built": 1950,
+    "purpose": [
+      "hydropower"
+    ],
+    "river": "Oum Er R'Bia",
+    "grid_distance_km": 40.9,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-065",
+    "name": "Sidi Driss",
+    "lat": 31.8147,
+    "lon": -6.8228,
+    "elevation_m": 954,
+    "height_m": 42.0,
+    "capacity_mcm": 7.0,
+    "surface_area_km2": 0.11,
+    "year_built": 1984,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Lakhdar",
+    "grid_distance_km": 6.9,
+    "nearest_substation": "Poste Hassan 1",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-066",
+    "name": "Joumouaa",
+    "lat": 34.74,
+    "lon": -5.0,
+    "elevation_m": 498,
+    "height_m": 57.0,
+    "capacity_mcm": 6.5,
+    "surface_area_km2": 0.02,
+    "year_built": 1992,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Joumouaa",
+    "grid_distance_km": 24.4,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-067",
+    "name": "Sehb El Merga",
+    "lat": 34.02,
+    "lon": -5.42,
+    "elevation_m": 870,
+    "height_m": 40.0,
+    "capacity_mcm": 6.5,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": null,
+    "grid_distance_km": 13.7,
+    "nearest_substation": "poste 60/22 kV de Sabaa Aiyoun",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-068",
+    "name": "Timi Noutione",
+    "lat": 31.6658,
+    "lon": -7.2581,
+    "elevation_m": 781,
+    "height_m": 45.0,
+    "capacity_mcm": 5.5,
+    "surface_area_km2": 0.53,
+    "year_built": 1981,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Tessaout",
+    "grid_distance_km": 2.0,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-069",
+    "name": "Ahl Souss",
+    "lat": 30.48,
+    "lon": -9.13,
+    "elevation_m": 148,
+    "height_m": 49.0,
+    "capacity_mcm": 4.7,
+    "surface_area_km2": null,
+    "year_built": 2004,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Izig",
+    "grid_distance_km": 16.3,
+    "nearest_substation": "Poste 225/60 KV GLALCHAL",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-070",
+    "name": "Draa El Grara",
+    "lat": 32.27,
+    "lon": -7.38,
+    "elevation_m": 434,
+    "height_m": 24.0,
+    "capacity_mcm": 4.3,
+    "surface_area_km2": null,
+    "year_built": 2003,
+    "purpose": [
+      "irrigation",
+      "water_supply"
+    ],
+    "river": "Jemala",
+    "grid_distance_km": 20.6,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-071",
+    "name": "Ait Ouarda",
+    "lat": 32.1028,
+    "lon": -6.9194,
+    "elevation_m": 515,
+    "height_m": 43.0,
+    "capacity_mcm": 4.0,
+    "surface_area_km2": 0.05,
+    "year_built": 1953,
+    "purpose": [
+      "irrigation",
+      "hydropower"
+    ],
+    "river": "El Abid",
+    "grid_distance_km": 33.5,
+    "nearest_substation": "Poste Hassan 1",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-072",
+    "name": "Garde Du Loukkos",
+    "lat": 35.1611,
+    "lon": -6.0889,
+    "elevation_m": 4,
+    "height_m": 9.0,
+    "capacity_mcm": 4.0,
+    "surface_area_km2": 0.22,
+    "year_built": 1981,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Loukkos",
+    "grid_distance_km": 13.8,
+    "nearest_substation": "poste Regraga",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-073",
+    "name": "Kheng El Hda",
+    "lat": 34.0778,
+    "lon": -2.9806,
+    "elevation_m": 729,
+    "height_m": 15.0,
+    "capacity_mcm": 3.8,
+    "surface_area_km2": 0.04,
+    "year_built": 1986,
+    "purpose": [
+      "livestock"
+    ],
+    "river": "Marbouha",
+    "grid_distance_km": 34.7,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-074",
+    "name": "Ajras",
+    "lat": 35.5686,
+    "lon": -5.4961,
+    "elevation_m": 48,
+    "height_m": 18.0,
+    "capacity_mcm": 3.0,
+    "surface_area_km2": 0.1,
+    "year_built": 1969,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Ajras",
+    "grid_distance_km": 13.7,
+    "nearest_substation": "Poste source 60/22 kV Boussafou",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-075",
+    "name": "Krayma",
+    "lat": 35.8,
+    "lon": -5.45,
+    "elevation_m": 394,
+    "height_m": 32.0,
+    "capacity_mcm": 3.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [],
+    "river": null,
+    "grid_distance_km": 1.3,
+    "nearest_substation": "poste 60/22 kV de Taghramt",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-076",
+    "name": "Taghdout",
+    "lat": 30.6242,
+    "lon": -7.3053,
+    "elevation_m": 1482,
+    "height_m": 26.0,
+    "capacity_mcm": 3.0,
+    "surface_area_km2": 0.01,
+    "year_built": 1956,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Amra",
+    "grid_distance_km": 38.0,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-077",
+    "name": "Blad El Gaada",
+    "lat": 33.9583,
+    "lon": -5.0972,
+    "elevation_m": 493,
+    "height_m": 30.0,
+    "capacity_mcm": 2.9,
+    "surface_area_km2": 0.04,
+    "year_built": 1991,
+    "purpose": [
+      "flood_control",
+      "pollution_ctrl"
+    ],
+    "river": "Boufrekane",
+    "grid_distance_km": 2.3,
+    "nearest_substation": "poste Cior Fes",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-078",
+    "name": "Ruidat Amont",
+    "lat": 33.8244,
+    "lon": -6.95,
+    "elevation_m": 90,
+    "height_m": 24.0,
+    "capacity_mcm": 2.9,
+    "surface_area_km2": 0.05,
+    "year_built": 1987,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Rouida",
+    "grid_distance_km": 9.2,
+    "nearest_substation": "poste 225/60/22 kV Zaer",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-079",
+    "name": "Tlet Boubker",
+    "lat": 35.1361,
+    "lon": -2.9139,
+    "elevation_m": 9,
+    "height_m": 30.0,
+    "capacity_mcm": 2.8,
+    "surface_area_km2": 0.08,
+    "year_built": 1986,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Irhane",
+    "grid_distance_km": 7.6,
+    "nearest_substation": "Poste 225/60 kV Selouane",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-080",
+    "name": "Msakhskha",
+    "lat": 34.5556,
+    "lon": -1.9667,
+    "elevation_m": 826,
+    "height_m": 20.0,
+    "capacity_mcm": 2.7,
+    "surface_area_km2": 0.08,
+    "year_built": 1985,
+    "purpose": [
+      "livestock"
+    ],
+    "river": "Msakhskha",
+    "grid_distance_km": 10.2,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-081",
+    "name": "Roknet Ennam",
+    "lat": 32.2,
+    "lon": -3.1,
+    "elevation_m": 1035,
+    "height_m": 17.5,
+    "capacity_mcm": 2.5,
+    "surface_area_km2": null,
+    "year_built": 2003,
+    "purpose": [
+      "livestock"
+    ],
+    "river": "Roknet Ennam",
+    "grid_distance_km": 19.5,
+    "nearest_substation": "poste 60/22 Kv de Bouanane",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-082",
+    "name": "Ait Moulay Ahmed",
+    "lat": 31.97,
+    "lon": -5.94,
+    "elevation_m": 2174,
+    "height_m": 29.0,
+    "capacity_mcm": 2.4,
+    "surface_area_km2": null,
+    "year_built": 2011,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Ain Leuh",
+    "grid_distance_km": 45.2,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": null
+  },
+  {
+    "id": "MAR-083",
+    "name": "Douiss Figuig",
+    "lat": 32.11,
+    "lon": -1.23,
+    "elevation_m": 898,
+    "height_m": 23.0,
+    "capacity_mcm": 2.4,
+    "surface_area_km2": null,
+    "year_built": 2004,
+    "purpose": [
+      "irrigation",
+      "water_supply",
+      "livestock"
+    ],
+    "river": "Oued Zelmou",
+    "grid_distance_km": 3.4,
+    "nearest_substation": "poste 60/22 Kv de Figuig",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-084",
+    "name": "Sghir",
+    "lat": 35.7083,
+    "lon": -5.3833,
+    "elevation_m": 29,
+    "height_m": 15.0,
+    "capacity_mcm": 2.3,
+    "surface_area_km2": 0.07,
+    "year_built": 1991,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Sghir",
+    "grid_distance_km": 12.7,
+    "nearest_substation": "Poste source 60/22 kV Boussafou",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-085",
+    "name": "Hassar",
+    "lat": 33.55,
+    "lon": -7.59,
+    "elevation_m": 91,
+    "height_m": 15.0,
+    "capacity_mcm": 2.1,
+    "surface_area_km2": null,
+    "year_built": 2005,
+    "purpose": [
+      "flood_control"
+    ],
+    "river": "Hassar",
+    "grid_distance_km": 2.7,
+    "nearest_substation": "poste 225/22 kV de Oulad Haddou",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-086",
+    "name": "Arabat",
+    "lat": 34.95,
+    "lon": -4.05,
+    "elevation_m": 1140,
+    "height_m": 17.0,
+    "capacity_mcm": 2.0,
+    "surface_area_km2": 0.05,
+    "year_built": 1995,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Arabat",
+    "grid_distance_km": 10.7,
+    "nearest_substation": "poste 60/22 kv Bni Hdifa",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-087",
+    "name": "Safi",
+    "lat": 32.3242,
+    "lon": -9.1875,
+    "elevation_m": 72,
+    "height_m": 18.0,
+    "capacity_mcm": 2.0,
+    "surface_area_km2": 0.08,
+    "year_built": 1965,
+    "purpose": [
+      "water_supply"
+    ],
+    "river": "Asmine ou Sahir",
+    "grid_distance_km": 21.0,
+    "nearest_substation": "Poste 225/60/22kv de Sidi Bouguedra",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-088",
+    "name": "Sidi Said Maachou",
+    "lat": 33.1547,
+    "lon": -8.115,
+    "elevation_m": 18,
+    "height_m": 29.0,
+    "capacity_mcm": 2.0,
+    "surface_area_km2": 0.08,
+    "year_built": 1929,
+    "purpose": [
+      "water_supply",
+      "hydropower"
+    ],
+    "river": "Oum Er Rbia",
+    "grid_distance_km": 37.3,
+    "nearest_substation": "poste Ghanem",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-089",
+    "name": "Boubagra",
+    "lat": 31.78,
+    "lon": -6.07,
+    "elevation_m": 2510,
+    "height_m": 21.0,
+    "capacity_mcm": 1.8,
+    "surface_area_km2": null,
+    "year_built": 2003,
+    "purpose": [
+      "irrigation",
+      "livestock"
+    ],
+    "river": "Boubagra",
+    "grid_distance_km": 28.3,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": null
+  },
+  {
+    "id": "MAR-090",
+    "name": "Oued Aricha",
+    "lat": 33.1444,
+    "lon": -7.0583,
+    "elevation_m": 381,
+    "height_m": 30.0,
+    "capacity_mcm": 1.8,
+    "surface_area_km2": 0.03,
+    "year_built": 1990,
+    "purpose": [
+      "livestock"
+    ],
+    "river": "Oued Aricha",
+    "grid_distance_km": 21.8,
+    "nearest_substation": "Poste 60/22 KV Ben Ahmed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-091",
+    "name": "Hammou Ourzag",
+    "lat": 32.7278,
+    "lon": -2.5678,
+    "elevation_m": 1290,
+    "height_m": 14.0,
+    "capacity_mcm": 1.6,
+    "surface_area_km2": 0.07,
+    "year_built": 1986,
+    "purpose": [
+      "livestock"
+    ],
+    "river": "Hammou Ourzag",
+    "grid_distance_km": 57.0,
+    "nearest_substation": "poste 60/22 Kv de Ain Chair",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-092",
+    "name": "Oued Namous",
+    "lat": 32.38,
+    "lon": -3.65,
+    "elevation_m": 1251,
+    "height_m": 17.6,
+    "capacity_mcm": 1.5,
+    "surface_area_km2": null,
+    "year_built": 2003,
+    "purpose": [
+      "livestock"
+    ],
+    "river": "Namous",
+    "grid_distance_km": 48.0,
+    "nearest_substation": "poste 60/22 Kv de Boudnib",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-093",
+    "name": "Chbika",
+    "lat": 30.92,
+    "lon": -8.86,
+    "elevation_m": 1653,
+    "height_m": 22.5,
+    "capacity_mcm": 1.4,
+    "surface_area_km2": null,
+    "year_built": 2010,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": null,
+    "grid_distance_km": 37.2,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-094",
+    "name": "Ain Koreima",
+    "lat": 33.9222,
+    "lon": -6.8083,
+    "elevation_m": 17,
+    "height_m": 26.0,
+    "capacity_mcm": 1.3,
+    "surface_area_km2": 0.02,
+    "year_built": 1987,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Akrech",
+    "grid_distance_km": 3.2,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-095",
+    "name": "Takhzrit",
+    "lat": 31.54,
+    "lon": -7.92,
+    "elevation_m": 550,
+    "height_m": 28.0,
+    "capacity_mcm": 1.2,
+    "surface_area_km2": null,
+    "year_built": 2009,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": null,
+    "grid_distance_km": 10.9,
+    "nearest_substation": "Poste Source 225/20-22 kV. Ennakhil",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-096",
+    "name": "Saboun",
+    "lat": 35.66,
+    "lon": -5.67,
+    "elevation_m": 96,
+    "height_m": 15.0,
+    "capacity_mcm": 1.1,
+    "surface_area_km2": 0.03,
+    "year_built": 1991,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Saboun",
+    "grid_distance_km": 1.6,
+    "nearest_substation": "Poste 60kV de Melloussa",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-097",
+    "name": "Si El Miari",
+    "lat": 34.6656,
+    "lon": -5.4006,
+    "elevation_m": 224,
+    "height_m": 21.0,
+    "capacity_mcm": 1.1,
+    "surface_area_km2": 0.03,
+    "year_built": 1986,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Takhzrit",
+    "grid_distance_km": 19.9,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-098",
+    "name": "Aggay",
+    "lat": 30.87,
+    "lon": -6.69,
+    "elevation_m": 1125,
+    "height_m": 40.0,
+    "capacity_mcm": 1.0,
+    "surface_area_km2": 0.01,
+    "year_built": 1994,
+    "purpose": [
+      "flood_control"
+    ],
+    "river": "Aggay",
+    "grid_distance_km": 16.3,
+    "nearest_substation": "Poste 225/60 kV Ouarzazate",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-099",
+    "name": "Bouknadel",
+    "lat": 34.12,
+    "lon": -6.73,
+    "elevation_m": 48,
+    "height_m": 19.0,
+    "capacity_mcm": 1.0,
+    "surface_area_km2": null,
+    "year_built": 1998,
+    "purpose": [],
+    "river": "Serou",
+    "grid_distance_km": 5.2,
+    "nearest_substation": "Poste 60/22 KV de Maamora",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-100",
+    "name": "Essaf",
+    "lat": 33.67,
+    "lon": -4.42,
+    "elevation_m": 1142,
+    "height_m": 29.0,
+    "capacity_mcm": 1.0,
+    "surface_area_km2": 0.02,
+    "year_built": 1992,
+    "purpose": [
+      "water_supply",
+      "livestock"
+    ],
+    "river": "Essaf",
+    "grid_distance_km": 34.7,
+    "nearest_substation": "unnamed",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-101",
+    "name": "Gharbia",
+    "lat": 35.3,
+    "lon": -5.52,
+    "elevation_m": 1125,
+    "height_m": 22.0,
+    "capacity_mcm": 1.0,
+    "surface_area_km2": null,
+    "year_built": 1997,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": "Ouergha",
+    "grid_distance_km": 20.7,
+    "nearest_substation": "Poste 225/60/11 kv Chefchaoun",
+    "substation_voltage_kv": 225.0
+  },
+  {
+    "id": "MAR-102",
+    "name": "Sidi El Mahjoub",
+    "lat": 34.65,
+    "lon": -5.6,
+    "elevation_m": 92,
+    "height_m": 22.0,
+    "capacity_mcm": 1.0,
+    "surface_area_km2": null,
+    "year_built": null,
+    "purpose": [
+      "irrigation"
+    ],
+    "river": null,
+    "grid_distance_km": 18.4,
+    "nearest_substation": "Poste Ouzanne 60kv",
+    "substation_voltage_kv": 60.0
+  },
+  {
+    "id": "MAR-103",
+    "name": "Touiltest",
+    "lat": 32.7917,
+    "lon": -6.4778,
+    "elevation_m": 676,
+    "height_m": 17.0,
+    "capacity_mcm": 1.0,
+    "surface_area_km2": 0.03,
+    "year_built": 1989,
+    "purpose": [
+      "irrigation",
+      "livestock"
+    ],
+    "river": "Touiltest",
+    "grid_distance_km": 9.9,
+    "nearest_substation": "Poste 60/22 Kv Bejaad",
+    "substation_voltage_kv": 60.0
+  }
+]

@@ -1,6 +1,5 @@
 import logging
 
-import numpy as np
 import pandas as pd
 
 from ..config import load_config
@@ -10,12 +9,12 @@ log = logging.getLogger(__name__)
 
 def compare_costs(energy_mwh, head_m=None, distance_km=None, tunnel_km=None):
     config = load_config()
-    cost_cfg = config["cost"]
+    cost_cfg = config.get("cost_benchmarks", config.get("cost", {}))
 
-    battery_cost = cost_cfg["battery_benchmark_usd_per_mwh"]
-    psh_low = cost_cfg["psh_benchmark_usd_per_mwh_low"]
-    psh_high = cost_cfg["psh_benchmark_usd_per_mwh_high"]
-    depreciation = cost_cfg["depreciation_years"]
+    battery_cost = cost_cfg.get("battery_usd_per_mwh", cost_cfg.get("battery_benchmark_usd_per_mwh", 300))
+    psh_low = cost_cfg.get("psh_usd_per_mwh_low", cost_cfg.get("psh_benchmark_usd_per_mwh_low", 150))
+    psh_high = cost_cfg.get("psh_usd_per_mwh_high", cost_cfg.get("psh_benchmark_usd_per_mwh_high", 250))
+    depreciation = cost_cfg.get("depreciation_years", 40)
 
     if head_m and head_m > 300:
         psh_estimate = psh_low
@@ -30,16 +29,13 @@ def compare_costs(energy_mwh, head_m=None, distance_km=None, tunnel_km=None):
     if distance_km and distance_km > 20:
         psh_estimate *= 1.0 + (distance_km - 20) * 0.01
 
-    battery_lcoe = battery_cost / depreciation
-    psh_lcoe = psh_estimate
-
-    cost_advantage = (battery_lcoe - psh_lcoe) / battery_lcoe * 100
+    cost_advantage = (battery_cost - psh_estimate) / battery_cost * 100
 
     return {
         "psh_cost_usd_per_mwh": round(psh_estimate, 0),
-        "battery_cost_usd_per_mwh": round(battery_lcoe, 0),
+        "battery_cost_usd_per_mwh": round(battery_cost, 0),
         "cost_advantage_pct": round(cost_advantage, 1),
-        "psh_cheaper": psh_lcoe < battery_lcoe,
+        "psh_cheaper": psh_estimate < battery_cost,
     }
 
 

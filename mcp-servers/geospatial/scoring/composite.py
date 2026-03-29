@@ -1,15 +1,21 @@
 import logging
 
-import numpy as np
 import pandas as pd
 
-from ..config import load_config, get_scoring_weights, get_screening_params
+from ..config import load_config
 
 log = logging.getLogger(__name__)
 
 
 def score_pairs(pairs_df, weight_variant="default"):
-    weights = get_scoring_weights(weight_variant)
+    cfg = load_config()
+    raw_weights = cfg.get("scoring_weights", cfg.get("scoring", {}).get(f"weights_{weight_variant}", {}))
+    weights = {
+        "energy_potential": raw_weights.get("energy_potential", 0.35),
+        "cost_advantage": raw_weights.get("cost_advantage", 0.30),
+        "grid_proximity": raw_weights.get("proximity_to_grid", raw_weights.get("grid_proximity", 0.20)),
+        "reservoir_quality": raw_weights.get("reservoir_quality", 0.15),
+    }
     log.info(f"Scoring {len(pairs_df)} pairs with {weight_variant} weights: {weights}")
 
     df = pairs_df.copy()
@@ -18,14 +24,12 @@ def score_pairs(pairs_df, weight_variant="default"):
     df["score_energy"] = _safe_normalize(df, "energy_mwh_standard", higher_better=True)
     df["score_grid"] = _safe_normalize(df, "grid_distance_km", higher_better=False)
     df["score_reservoir"] = _score_reservoir_suitability(df)
-    df["score_regulatory"] = _score_regulatory_risk(df)
 
     df["composite_score"] = (
-        df["score_cost"] * weights["cost_competitiveness"]
+        df["score_cost"] * weights["cost_advantage"]
         + df["score_energy"] * weights["energy_potential"]
         + df["score_grid"] * weights["grid_proximity"]
-        + df["score_reservoir"] * weights["reservoir_suitability"]
-        + df["score_regulatory"] * weights["regulatory_risk"]
+        + df["score_reservoir"] * weights["reservoir_quality"]
     )
 
     df = df.sort_values("composite_score", ascending=False).reset_index(drop=True)
@@ -76,53 +80,3 @@ def _score_reservoir_suitability(df):
         scores = scores + source_bonus.clip(0, 0.3)
 
     return scores.clip(0, 1)
-
-
-def _score_regulatory_risk(df):
-    scores = pd.Series(0.7, index=df.index)
-
-    if "tier2_reasons" in df.columns:
-        protected = df["tier2_reasons"].str.contains("protected", case=False, na=False)
-        scores[protected] = 0.2
-
-    if "terrain_difficulty" in df.columns:
-        infeasible = df["terrain_difficulty"] == "infeasible"
-        challenging = df["terrain_difficulty"] == "challenging"
-        scores[infeasible] = 0.1
-        scores[challenging] = scores[challenging] * 0.8
-
-    return scores.clip(0, 1)
-
-
-def run_sensitivity(pairs_df):
-    config = load_config()
-    sensitivity_configs = config.get("sensitivity", {})
-    weight_variants = ["default", "cost_focused", "energy_focused"]
-
-    results = {}
-
-    for param_name, param_overrides in sensitivity_configs.items():
-        log.info(f"Sensitivity run: {param_name} parameters")
-        from ..screening.filters import apply_tier1_filters
-        filtered = apply_tier1_filters(pairs_df, params={
-            **get_screening_params(),
-            **param_overrides,
-        })
-        viable = filtered[filtered["tier1_status"].isin(["pass", "borderline"])]
-        results[f"params_{param_name}"] = {
-            "viable_count": len(viable),
-            "param_overrides": param_overrides,
-        }
-
-    for variant in weight_variants:
-        try:
-            scored = score_pairs(pairs_df, weight_variant=variant)
-            top_10 = scored.head(10)[["rank", "upper_dam_name", "lower_dam_name", "composite_score"]].to_dict("records")
-            results[f"weights_{variant}"] = {
-                "top_10": top_10,
-                "weight_variant": variant,
-            }
-        except Exception as e:
-            log.warning(f"Sensitivity scoring with {variant} weights failed: {e}")
-
-    return results

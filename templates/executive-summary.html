@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500&display=swap');
+
+:root {
+  --black: #0a0a0a;
+  --accent: #2563EB;
+  --accent-bg: rgba(37, 99, 235, 0.04);
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --light: #f9fafb;
+  --border: #e5e7eb;
+  --green: #059669;
+  --amber: #d97706;
+  --red: #dc2626;
+}
+
+@page {
+  size: A4;
+  margin: 25mm 30mm 22mm 30mm;
+  @bottom-center {
+    content: "Confidential";
+    font-family: 'Inter', sans-serif;
+    font-size: 7pt;
+    color: #d0d0d0;
+  }
+}
+@page cover { margin: 0; @bottom-center { content: none; } }
+@page :first { @bottom-center { content: none; } }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  color: var(--text);
+  font-size: 10pt;
+  line-height: 1.65;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+p { margin-bottom: 3mm; }
+p:last-child { margin-bottom: 0; }
+
+
+/* ═══════════ COVER ═══════════ */
+
+.cover {
+  page: cover;
+  width: 210mm;
+  height: 297mm;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  padding: 40mm 38mm 35mm 38mm;
+  page-break-after: always;
+}
+
+.cover-label {
+  font-size: 8pt;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4mm;
+}
+
+.cover-rule {
+  width: 32mm;
+  height: 2px;
+  background: var(--accent);
+  margin-bottom: 10mm;
+}
+
+.cover-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cover h1 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 36pt;
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.8px;
+  color: var(--black);
+  margin-bottom: 10mm;
+  max-width: 130mm;
+}
+
+.cover-brief {
+  font-size: 12pt;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.7;
+  max-width: 120mm;
+}
+
+.cover-footer {
+  display: flex;
+  gap: 18mm;
+  padding-top: 10mm;
+  border-top: 1px solid var(--border);
+}
+
+.cover-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5mm;
+}
+
+.cover-meta-label {
+  font-size: 7pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #b0b0b0;
+}
+
+.cover-meta-value {
+  font-size: 10pt;
+  color: var(--text);
+  font-weight: 500;
+}
+
+
+/* ═══════════ CONTENT PAGES ═══════════ */
+
+.content-page { page-break-before: always; }
+
+.page-rule {
+  width: 100%;
+  height: 2px;
+  background: var(--accent);
+  margin-bottom: 7mm;
+}
+
+.section-label {
+  font-size: 8pt;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 2mm;
+}
+
+.section-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26pt;
+  font-weight: 400;
+  color: var(--black);
+  margin-bottom: 7mm;
+  letter-spacing: -0.4px;
+  line-height: 1.15;
+}
+
+
+/* ═══════════ STATS ═══════════ */
+
+.stat-row {
+  display: flex;
+  gap: 5mm;
+  margin-bottom: 7mm;
+}
+
+.stat-box {
+  flex: 1;
+  background: var(--accent-bg);
+  border-radius: 3mm;
+  padding: 5mm;
+  text-align: center;
+  border: 1px solid rgba(37, 99, 235, 0.08);
+}
+
+.stat-number {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 24pt;
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.stat-label {
+  font-size: 7pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-top: 1mm;
+}
+
+.summary-text {
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 7mm;
+}
+
+
+/* ═══════════ PARAMETERS ═══════════ */
+
+.params-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4mm;
+  margin-bottom: 5mm;
+}
+
+.param-box {
+  background: var(--light);
+  border-radius: 2mm;
+  padding: 4mm 5mm;
+  border: 1px solid var(--border);
+}
+
+.param-box h4 {
+  font-size: 7pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 2mm;
+}
+
+.param-box ul {
+  list-style: none;
+  font-size: 9pt;
+  color: var(--text);
+}
+
+.param-box li {
+  padding: 1mm 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.param-box li:last-child { border-bottom: none; }
+
+
+/* ═══════════ TABLE ═══════════ */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 5mm 0;
+  font-size: 9pt;
+}
+
+th {
+  background: var(--black);
+  color: white;
+  padding: 2.5mm 3mm;
+  text-align: left;
+  font-weight: 600;
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+td {
+  padding: 2.5mm 3mm;
+  border-bottom: 1px solid var(--border);
+}
+
+tr:nth-child(even) td { background: var(--light); }
+
+td.score {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+
+/* ═══════════ PAIR CARDS ═══════════ */
+
+.pair-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 2mm;
+  padding: 5mm 6mm;
+  margin: 4mm 0;
+  page-break-inside: avoid;
+}
+
+.pair-card.strong { border-left-color: var(--green); }
+.pair-card.investigate { border-left-color: var(--amber); }
+.pair-card.marginal { border-left-color: var(--red); }
+
+.pair-header {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  margin-bottom: 3mm;
+}
+
+.pair-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 14pt;
+  font-weight: 400;
+  color: var(--black);
+}
+
+.verdict-badge {
+  font-size: 6.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 1mm 2.5mm;
+  border-radius: 1mm;
+}
+
+.verdict-badge.strong { background: #d1fae5; color: #065f46; }
+.verdict-badge.investigate { background: #fef3c7; color: #92400e; }
+.verdict-badge.marginal { background: #fee2e2; color: #991b1b; }
+
+.pair-metrics {
+  display: flex;
+  gap: 4mm;
+  margin: 3mm 0;
+  padding: 2mm 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.metric {
+  flex: 1;
+  text-align: center;
+}
+
+.metric-value {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16pt;
+  font-weight: 400;
+  color: var(--black);
+}
+
+.metric-label {
+  font-size: 6.5pt;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.pair-assessment {
+  font-size: 9pt;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.pair-assessment strong { color: var(--black); }
+
+
+/* ═══════════ FOOTER ═══════════ */
+
+.report-footer {
+  margin-top: 10mm;
+  padding-top: 4mm;
+  border-top: 1px solid var(--border);
+  font-size: 7.5pt;
+  color: #b0b0b0;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ COVER ═══════════ -->
+<div class="cover">
+  <div class="cover-label">PSH Screening Report</div>
+  <div class="cover-rule"></div>
+  <div class="cover-body">
+    <h1>Pumped Storage Hydropower Site Screening</h1>
+    <p class="cover-brief">{{ total_dams }} dams evaluated across {{ country }}. {{ viable_pairs }} viable pairs identified and ranked by energy potential, cost competitiveness, grid proximity, and reservoir quality.</p>
+  </div>
+  <div class="cover-footer">
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">Country</span>
+      <span class="cover-meta-value">{{ country }}</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">Date</span>
+      <span class="cover-meta-value">{{ date }}</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">Dams Screened</span>
+      <span class="cover-meta-value">{{ total_dams }}</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">Pairs Evaluated</span>
+      <span class="cover-meta-value">{{ "{:,}".format(total_pairs) }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ EXECUTIVE SUMMARY ═══════════ -->
+<div class="content-page">
+  <div class="page-rule"></div>
+  <div class="section-label">01 Overview</div>
+  <div class="section-title">Executive Summary</div>
+
+  <div class="stat-row">
+    <div class="stat-box">
+      <div class="stat-number">{{ total_dams }}</div>
+      <div class="stat-label">Dams Screened</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number">{{ "{:,}".format(total_pairs) }}</div>
+      <div class="stat-label">Pairs Evaluated</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number">{{ viable_pairs }}</div>
+      <div class="stat-label">Viable Pairs</div>
+    </div>
+  </div>
+
+  <p class="summary-text">{{ summary_text }}</p>
+
+  <div class="section-label" style="margin-top: 5mm;">Screening Parameters</div>
+
+  <div class="params-grid">
+    <div class="param-box">
+      <h4>Filters</h4>
+      <ul>
+        <li>Minimum head: {{ min_head_m }}m</li>
+        <li>Maximum distance: {{ max_distance_km }}km</li>
+        <li>Minimum capacity: {{ min_capacity_mcm }} MCM</li>
+      </ul>
+    </div>
+    <div class="param-box">
+      <h4>Cost Benchmarks</h4>
+      <ul>
+        <li>Battery: ${{ battery_cost }}/MWh</li>
+        <li>PSH range: ${{ psh_low }}-${{ psh_high }}/MWh</li>
+        <li>Efficiency: {{ efficiency }}%</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="param-box">
+    <h4>Scoring Weights</h4>
+    <ul style="display: flex; gap: 5mm;">
+      {% for name, weight in weights.items() %}
+      <li style="border: none; flex: 1;">{{ name.replace("_", " ").title() }}: {{ (weight * 100) | int }}%</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════ RANKED TABLE ═══════════ -->
+<div class="content-page">
+  <div class="page-rule"></div>
+  <div class="section-label">02 Results</div>
+  <div class="section-title">Top {{ pairs | length }} Pairs</div>
+
+  <table>
+    <tr>
+      <th>#</th>
+      <th>Upper Dam</th>
+      <th>Lower Dam</th>
+      <th>Head (m)</th>
+      <th>Dist (km)</th>
+      <th>Energy (MWh)</th>
+      <th>Grid (km)</th>
+      <th>Score</th>
+    </tr>
+    {% for pair in pairs %}
+    <tr>
+      <td>{{ pair.rank }}</td>
+      <td>{{ pair.upper_dam }}</td>
+      <td>{{ pair.lower_dam }}</td>
+      <td>{{ "{:,}".format(pair.head_m | int) }}</td>
+      <td>{{ "%.1f" | format(pair.distance_km) }}</td>
+      <td>{{ "{:,}".format(pair.energy_mwh | int) }}</td>
+      <td>{{ "%.1f" | format(pair.grid_distance_km) if pair.grid_distance_km else 'N/A' }}</td>
+      <td class="score">{{ "%.2f" | format(pair.score) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<!-- ═══════════ DETAILED ASSESSMENTS ═══════════ -->
+<div class="content-page">
+  <div class="page-rule"></div>
+  <div class="section-label">03 Assessment</div>
+  <div class="section-title">Detailed Pair Analysis</div>
+
+  {% for pair in pairs %}
+  {% set verdict_class = 'strong' if pair.verdict == 'Strong candidate' else ('investigate' if pair.verdict == 'Worth investigating' else 'marginal') %}
+  <div class="pair-card {{ verdict_class }}">
+    <div class="pair-header">
+      <span class="pair-title">#{{ pair.rank }}: {{ pair.upper_dam }} + {{ pair.lower_dam }}</span>
+      <span class="verdict-badge {{ verdict_class }}">{{ pair.verdict }}</span>
+    </div>
+    <div class="pair-metrics">
+      <div class="metric"><div class="metric-value">{{ "{:,}".format(pair.head_m | int) }}m</div><div class="metric-label">Head</div></div>
+      <div class="metric"><div class="metric-value">{{ "%.1f" | format(pair.distance_km) }}km</div><div class="metric-label">Distance</div></div>
+      <div class="metric"><div class="metric-value">{{ "{:,}".format(pair.energy_mwh | int) }}</div><div class="metric-label">Energy (MWh)</div></div>
+      <div class="metric"><div class="metric-value">{{ "%.2f" | format(pair.score) }}</div><div class="metric-label">Score</div></div>
+    </div>
+    <div class="pair-assessment">{{ pair.assessment }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="report-footer">
+  Generated {{ date }}. All cost estimates are indicative and based on benchmark ranges, not site-specific feasibility studies. Scoring is relative across evaluated pairs, not absolute viability assessment.
+</div>
+
+</body>
+</html>

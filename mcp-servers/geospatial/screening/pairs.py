@@ -9,24 +9,29 @@ from ..geo import haversine_km
 log = logging.getLogger(__name__)
 
 
+def _valid(val):
+    if val is None:
+        return False
+    try:
+        return not np.isnan(float(val))
+    except (ValueError, TypeError):
+        return False
+
+
 def generate_pairs(dam_registry):
     dams = dam_registry.to_dict("records")
-    n = len(dams)
+    valid_dams = [d for d in dams if _valid(d.get("lat")) and _valid(d.get("lon")) and _valid(d.get("elevation_wall_m"))]
+    n = len(valid_dams)
     total_pairs = n * (n - 1) // 2
-    log.info(f"Generating pairs from {n} dams ({total_pairs} combinations)")
+    log.info(f"Generating pairs from {n} dams with coords+elevation ({total_pairs} combinations, {len(dams) - n} excluded)")
 
     pairs = []
     for i, j in combinations(range(n), 2):
-        dam_a = dams[i]
-        dam_b = dams[j]
+        dam_a = valid_dams[i]
+        dam_b = valid_dams[j]
 
-        if dam_a.get("lat") is None or dam_b.get("lat") is None:
-            continue
-
-        elev_a = dam_a.get("elevation_wall_m")
-        elev_b = dam_b.get("elevation_wall_m")
-        if elev_a is None or elev_b is None:
-            continue
+        elev_a = dam_a["elevation_wall_m"]
+        elev_b = dam_b["elevation_wall_m"]
 
         distance_km = haversine_km(dam_a["lat"], dam_a["lon"], dam_b["lat"], dam_b["lon"])
 
@@ -41,6 +46,16 @@ def generate_pairs(dam_registry):
             continue
 
         distance_head_ratio = (distance_km * 1000) / head
+
+        upper_grid = upper.get("grid_distance_km")
+        lower_grid = lower.get("grid_distance_km")
+        pair_grid = None
+        if _valid(upper_grid) and _valid(lower_grid):
+            pair_grid = round(min(float(upper_grid), float(lower_grid)), 1)
+        elif _valid(upper_grid):
+            pair_grid = round(float(upper_grid), 1)
+        elif _valid(lower_grid):
+            pair_grid = round(float(lower_grid), 1)
 
         pairs.append({
             "upper_dam_id": upper["id"],
@@ -58,6 +73,7 @@ def generate_pairs(dam_registry):
             "head_m": head,
             "distance_km": round(distance_km, 2),
             "distance_head_ratio": round(distance_head_ratio, 2),
+            "grid_distance_km": pair_grid,
         })
 
     result = pd.DataFrame(pairs)

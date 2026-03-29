@@ -1,185 +1,166 @@
 import logging
-from itertools import combinations
+import math
+import re
 
-import numpy as np
 import pandas as pd
-from thefuzz import fuzz
 
 from ..geo import haversine_m
 
 log = logging.getLogger(__name__)
 
-PROXIMITY_THRESHOLD_M = 500
-NAME_SIMILARITY_THRESHOLD = 70
+PROXIMITY_THRESHOLD_M = 2000
 
 
-def merge_registries(source_dfs):
-    all_dams = []
-    for source_name, df in source_dfs.items():
-        if df is None or len(df) == 0:
-            continue
-        df = df.copy()
-        df["_source"] = source_name
-        all_dams.append(df)
-
-    if not all_dams:
-        log.error("No dam data to merge")
-        return pd.DataFrame()
-
-    combined = pd.concat(all_dams, ignore_index=True)
-    combined = combined.dropna(subset=["lat", "lon"])
-    log.info(f"Total records before dedup: {len(combined)}")
-
-    clusters = _cluster_by_proximity(combined, PROXIMITY_THRESHOLD_M)
-    log.info(f"Found {len(clusters)} unique dam clusters")
-
-    merged_dams = []
-    for i, cluster in enumerate(clusters):
-        merged = _merge_cluster(cluster, dam_id=f"MAR-{i + 1:03d}")
-        merged_dams.append(merged)
-
-    result = pd.DataFrame(merged_dams)
-    result = result.sort_values("name").reset_index(drop=True)
-
-    for i, _ in result.iterrows():
-        result.at[i, "id"] = f"MAR-{i + 1:03d}"
-
-    log.info(f"Merged registry: {len(result)} unique dams")
-    return result
+def _coord_missing(dam):
+    lat = dam.get("lat")
+    lon = dam.get("lon")
+    if lat is None or lon is None:
+        return True
+    try:
+        if math.isnan(float(lat)) or math.isnan(float(lon)):
+            return True
+    except (ValueError, TypeError):
+        return True
+    return False
 
 
-def _cluster_by_proximity(df, threshold_m):
-    records = df.to_dict("records")
-    n = len(records)
-    parent = list(range(n))
-
-    def find(x):
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    def union(a, b):
-        ra, rb = find(a), find(b)
-        if ra != rb:
-            parent[ra] = rb
-
-    lats = np.array([r["lat"] for r in records])
-    lons = np.array([r["lon"] for r in records])
-
-    for i in range(n):
-        if i % 500 == 0 and i > 0:
-            log.info(f"Clustering progress: {i}/{n}")
-        for j in range(i + 1, n):
-            if abs(lats[i] - lats[j]) > 0.05:
-                continue
-            if abs(lons[i] - lons[j]) > 0.05:
-                continue
-            dist = haversine_m(lats[i], lons[i], lats[j], lons[j])
-            if dist <= threshold_m:
-                union(i, j)
-            elif dist <= threshold_m * 3:
-                name_i = records[i].get("name", "")
-                name_j = records[j].get("name", "")
-                if name_i and name_j and _fuzzy_match(name_i, name_j):
-                    union(i, j)
-
-    clusters_dict = {}
-    for i in range(n):
-        root = find(i)
-        clusters_dict.setdefault(root, []).append(records[i])
-
-    return list(clusters_dict.values())
-
-
-def _fuzzy_match(name1, name2):
-    if not name1 or not name2:
-        return False
-    name1 = _normalize_name(name1)
-    name2 = _normalize_name(name2)
-    if not name1 or not name2:
-        return False
-    ratio = fuzz.token_sort_ratio(name1, name2)
-    return ratio >= NAME_SIMILARITY_THRESHOLD
-
-
-def _normalize_name(name):
-    if not isinstance(name, str):
+def _normalize(name):
+    if not name or not isinstance(name, str):
         return ""
     name = name.strip().lower()
-    for prefix in ["barrage ", "barrage d'", "barrage de ", "barrage du ",
-                    "barrage el ", "barrage al ", "dam ", "sdd ", "reservoir "]:
+    name = re.sub(r"[''`]", "'", name)
+    name = re.sub(r"\s+", " ", name)
+    for prefix in ["barrage d'", "barrage de ", "barrage du ", "barrage el ",
+                    "barrage al ", "barrage ", "dam ", "sdd ", "reservoir "]:
         if name.startswith(prefix):
             name = name[len(prefix):]
+    name = re.sub(r"[^a-z0-9 ]", "", name)
     return name.strip()
 
 
-def _merge_cluster(records, dam_id):
-    names = set()
-    sources = set()
-    lats, lons = [], []
-    heights, capacities, areas, elevations = [], [], [], []
-    years, purposes = [], []
+def _names_match(name1, name2):
+    if not name1 or not name2:
+        return False
+    n1 = _normalize(name1)
+    n2 = _normalize(name2)
+    if not n1 or not n2:
+        return False
+    if n1 == n2:
+        return True
+    if n1.replace(" ", "") == n2.replace(" ", ""):
+        return True
+    words1 = n1.split()
+    words2 = n2.split()
+    if len(words1) == len(words2) and len(words1) >= 3:
+        mismatches = sum(1 for a, b in zip(sorted(words1), sorted(words2)) if a != b)
+        if mismatches <= 1:
+            return True
+    return False
 
-    for r in records:
-        sources.add(r.get("_source", r.get("source", "")))
 
-        name = r.get("name", "")
-        if name and name.lower() not in ("", "nan", "none", "unknown"):
-            names.add(name.strip())
+def merge_from_staged(staged_sources, config):
+    country_code = config.get("country_code", "DAM")
+    backbone = config.get("backbone_source")
+    priority = config.get("sources_priority", list(staged_sources.keys()))
+    threshold = config.get("proximity_threshold_m", 2000)
+    aliases = config.get("name_aliases", {})
+    known_coords = config.get("known_coordinates", {})
 
-        if r.get("lat") is not None:
-            lats.append(r["lat"])
-        if r.get("lon") is not None:
-            lons.append(r["lon"])
-        if r.get("height_m") is not None:
-            heights.append(r["height_m"])
-        if r.get("capacity_mcm") is not None:
-            capacities.append(r["capacity_mcm"])
-        if r.get("surface_area_km2") is not None:
-            areas.append(r["surface_area_km2"])
-        if r.get("elevation_m") is not None:
-            elevations.append(r["elevation_m"])
-        if r.get("year_built") is not None:
-            years.append(r["year_built"])
-        if r.get("purpose") and str(r["purpose"]).strip():
-            purposes.append(str(r["purpose"]).strip())
+    dams = []
+    used_names = set()
 
-    primary_name = _pick_best_name(names) if names else "Unknown"
+    if backbone and backbone in staged_sources:
+        for record in staged_sources[backbone]:
+            dam = _record_to_dam(record, backbone)
+            dams.append(dam)
+            if dam.get("name"):
+                used_names.add(_normalize(dam["name"]))
 
+    for source_name in priority:
+        if source_name == backbone or source_name not in staged_sources:
+            continue
+        for record in staged_sources[source_name]:
+            name = record.get("name", "")
+            norm = _normalize(name)
+
+            alias_target = aliases.get(name)
+            matched = False
+
+            for dam in dams:
+                dam_norm = _normalize(dam.get("name", ""))
+                alias_norm = _normalize(alias_target) if alias_target else None
+
+                if (dam_norm and norm and (dam_norm == norm or (alias_norm and alias_norm == dam_norm))) or \
+                   (dam_norm and norm and _names_match(name, dam["name"])):
+                    _enrich_dam(dam, record, source_name)
+                    matched = True
+                    break
+
+            if not matched and record.get("lat") is not None and record.get("lon") is not None:
+                for dam in dams:
+                    if _coord_missing(dam):
+                        continue
+                    try:
+                        dist = haversine_m(record["lat"], record["lon"], dam["lat"], dam["lon"])
+                        if dist < threshold:
+                            _enrich_dam(dam, record, source_name)
+                            matched = True
+                            break
+                    except (TypeError, ValueError):
+                        continue
+
+            if not matched:
+                dam = _record_to_dam(record, source_name)
+                dams.append(dam)
+
+    for dam in dams:
+        coords = known_coords.get(dam.get("name"))
+        if coords and _coord_missing(dam):
+            dam["lat"] = coords[0]
+            dam["lon"] = coords[1]
+
+    dams.sort(key=lambda d: d.get("name", ""))
+    for i, dam in enumerate(dams):
+        dam["id"] = f"{country_code}-{i + 1:03d}"
+
+    log.info(f"Staged merge: {len(dams)} dams from {len(staged_sources)} sources")
+    return pd.DataFrame(dams)
+
+
+def _record_to_dam(record, source_name):
     return {
-        "id": dam_id,
-        "name": primary_name,
-        "names_alt": sorted(names) if names else [],
-        "sources": sorted(sources),
-        "lat": np.mean(lats) if lats else None,
-        "lon": np.mean(lons) if lons else None,
-        "height_m": max(heights) if heights else None,
-        "capacity_mcm": max(capacities) if capacities else None,
-        "surface_area_km2": max(areas) if areas else None,
-        "elevation_db_m": np.mean(elevations) if elevations else None,
-        "year_built": min(years) if years else None,
-        "purpose": list(set(purposes)) if purposes else [],
+        "name": record.get("name"),
+        "alt_names": [record["alt_name"]] if record.get("alt_name") else [],
+        "lat": record.get("lat"),
+        "lon": record.get("lon"),
+        "height_m": record.get("height_m"),
+        "capacity_mcm": record.get("capacity_mcm"),
+        "surface_area_km2": record.get("surface_area_km2"),
+        "year_built": record.get("year_built"),
+        "river": record.get("river"),
+        "basin": record.get("basin"),
+        "purpose": record.get("purpose", []),
+        "nearest_city": record.get("nearest_city"),
+        "elevation_db_m": record.get("elevation_m") or record.get("elevation_db_m"),
+        "sources": [source_name],
+        "grand_id": record.get("grand_id"),
         "status": "operational",
-        "num_sources": len(sources),
     }
 
 
-def _pick_best_name(names):
-    if not names:
-        return "Unknown"
-    if len(names) == 1:
-        return list(names)[0]
-    scored = []
-    for name in names:
-        score = 0
-        if any(c.isascii() for c in name):
-            score += 1
-        if len(name) > 3:
-            score += 1
-        if not name.startswith("Barrage"):
-            score += 1
-        score += len(name) / 100
-        scored.append((score, name))
-    scored.sort(reverse=True)
-    return scored[0][1]
+def _enrich_dam(dam, record, source_name):
+    if source_name not in dam.get("sources", []):
+        dam.setdefault("sources", []).append(source_name)
+
+    if _coord_missing(dam) and record.get("lat") is not None:
+        dam["lat"] = record["lat"]
+        dam["lon"] = record["lon"]
+
+    for field in ["height_m", "capacity_mcm", "surface_area_km2", "year_built",
+                  "river", "basin", "nearest_city", "elevation_db_m", "grand_id"]:
+        if dam.get(field) is None and record.get(field) is not None:
+            dam[field] = record[field]
+
+    rec_name = record.get("name", "")
+    if rec_name and rec_name != dam.get("name") and rec_name not in dam.get("alt_names", []):
+        dam.setdefault("alt_names", []).append(rec_name)

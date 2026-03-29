@@ -13,9 +13,34 @@ log = logging.getLogger(__name__)
 SAMPLE_INTERVAL_M = 30
 
 
+def _empty_profile():
+    return {
+        "distances_km": [],
+        "elevations_m": [],
+        "lats": [],
+        "lons": [],
+        "upper_elevation_m": None,
+        "lower_elevation_m": None,
+        "head_m": 0,
+        "distance_km": 0,
+        "max_ridge_elevation_m": 0,
+        "max_ridge_height_above_upper_m": 0,
+        "ridges": [],
+        "tunnel_length_km": 0,
+        "terrain_difficulty": "infeasible",
+        "obstacles": [],
+    }
+
+
 def extract_terrain_profile(upper_lat, upper_lon, lower_lat, lower_lon, upper_elev, lower_elev):
+    for val in [upper_lat, upper_lon, lower_lat, lower_lon]:
+        if val is None or (isinstance(val, float) and np.isnan(val)):
+            return _empty_profile()
+
     distance_km = haversine_km(upper_lat, upper_lon, lower_lat, lower_lon)
     distance_m = distance_km * 1000
+    if np.isnan(distance_m) or distance_m <= 0:
+        return _empty_profile()
     num_points = max(int(distance_m / SAMPLE_INTERVAL_M), 10)
 
     lats, lons = interpolate_points(upper_lat, upper_lon, lower_lat, lower_lon, num_points)

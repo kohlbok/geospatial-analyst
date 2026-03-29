@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "geospatial": {
+      "command": ".venv/bin/python",
+      "args": ["mcp-servers/geospatial/server.py"],
+      "cwd": ".",
+      "env": {
+        "PYTHONPATH": "mcp-servers"
+      }
+    }
+  }
+}

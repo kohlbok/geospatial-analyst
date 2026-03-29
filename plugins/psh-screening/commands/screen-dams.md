@@ -1,71 +1,56 @@
 # /screen-dams
 
-Screen all dams in a target country for pumped storage hydropower potential.
+Screen all dams for pumped storage hydropower (PSH) potential.
 
-## Usage
+## Skills
 
-```
-/screen-dams [country]
-```
+Load: methodology, constraints
 
-Default country: Morocco.
+## Steps
 
-## Prerequisites
+### Step 1: Load Data
 
-- Python 3.10+ with venv
-- Internet access (for downloading databases and SRTM tiles)
-- `config/parameters.json` configured with desired thresholds
+Read `data/dams.json`. Report: total dams, field coverage (elevation, capacity, grid distance), any data quality issues (missing fields, duplicates within 1km, coordinates outside bbox). Keep it brief.
 
-## What This Command Does
+### Step 2: Assumptions
 
-This is the main end-to-end screening workflow. It orchestrates the MCP geospatial tools in sequence:
+Read `config/parameters.json`. Present the filters, scoring weights, and cost benchmarks. Ask if user wants to adjust anything.
 
-### Phase 1: Data Ingestion
-1. Load skills: methodology, data-sources, constraints
-2. Call `download_databases` tool to fetch HydroLAKES, GRanD, GDAT, FAO AQUASTAT
-3. Call `merge_registries` tool to fuzzy-match and deduplicate into unified registry
-4. Call `enrich_elevation` tool to add SRTM elevation at wall, centroid, pour point
-5. Output: `data/processed/dam_registry.json`
-6. Call `generate_map` tool to create registry overview map
+### Step 3: Generate and Score Pairs
 
-### Phase 2: Pair Screening
-7. Call `generate_pairs` tool to create all possible dam pair combinations
-8. Call `filter_pairs` tool with Tier 1 constraints (head, distance ratio, capacity)
-9. Call `filter_pairs` tool with Tier 2 constraints (protected areas, fill rate, grid proximity)
-10. Review borderline cases: examine pairs near thresholds, write rationales
-11. Output: `data/processed/filtered_pairs.json`
+Call `generate_pairs` then `screen_pairs`. Report: total pairs evaluated, how many passed filters, top 10 with rank, names, head, distance, energy, and score.
 
-### Phase 3: Terrain Analysis
-12. Call `analyze_terrain` tool for each viable pair (elevation profiles, obstacles)
-13. Classify terrain difficulty, estimate tunnel lengths
-14. Eliminate pairs with infeasible terrain
-15. Output: terrain profiles in `output/reports/`
+### Step 4: Outputs
 
-### Phase 4: Scoring and Output
-16. Call `calculate_energy` tool for each terrain-viable pair at 3 fill levels
-17. Call `compare_costs` tool for PSH vs battery benchmark
-18. Call `score_pairs` tool with composite scoring across dimensions
-19. Call `run_sensitivity` tool with tight/standard/relaxed thresholds
-20. Call `generate_outputs` tool: Excel workbook, interactive maps, JSON, KML, GeoJSON
-21. Output: everything in `output/`
+Call `generate_map` and `generate_results`. Tell user where files are:
+- `output/results.xlsx` -- formatted workbook (Dam Registry + Pairs Ranked + Assumptions)
+- `output/results.json` -- machine-readable results
+- `output/map.html` -- interactive map with satellite imagery (open in browser)
+- `output/top_pairs_3d.kml` -- 3D terrain view of top pairs (open in Google Earth)
+- `output/pairs.geojson` -- for GIS tools
 
-### Phase 5: Summary
-22. Present top 10 pairs with key metrics
-23. Summary statistics: how many dams, pairs evaluated, pairs viable
-24. Flag any data quality issues or missing data
-25. Recommend whether Package 2 (new dam site scanning) is needed
+### Step 5: Expert Review + Executive Summary (optional)
 
-## After Running
+Ask: "Want me to review the top 10 pairs and generate an executive summary PDF?"
 
-The agent will have produced:
-- `output/exports/dam_registry.xlsx` (or .json)
-- `output/exports/ranked_pairs.xlsx` (or .json)
-- `output/maps/morocco_overview.html`
-- `output/maps/top_pairs.html`
-- `output/maps/morocco_dams.kml`
-- `output/maps/morocco_pairs.geojson`
-- `output/reports/terrain_profile_*.html` (per top pair)
+If yes:
 
-CEB team can open HTML maps in browser, KML in Google Earth, GeoJSON in QGIS.
+1. For each of the top 10 pairs, write a brief honest assessment covering:
+   - Why it works (head, capacity, distance)
+   - Concerns (remoteness, small reservoir, competing water uses based on purpose field)
+   - Grid connection quality (distance, voltage)
+   - Verdict: one of "Strong candidate" / "Worth investigating" / "Marginal"
 
-To rerun with different parameters: edit `config/parameters.json` and run again.
+2. Present the review to the user in chat.
+
+3. Call `generate_executive_summary` with the expert review data as a JSON list. Each entry needs: rank, upper_dam, lower_dam, head_m, distance_km, energy_mwh, score, grid_distance_km, verdict (one of "Strong candidate" / "Worth investigating" / "Marginal"), assessment (HTML string with `<p><strong>Why it works:</strong>...`, `<strong>Concerns:</strong>...`, `<strong>Grid connection:</strong>...`).
+
+4. Read the generated PDF (`output/executive-summary.pdf`) and visually review it. Check that:
+   - Cover page looks clean with no overflow
+   - Stats, table, and pair cards render properly
+   - No floating point numbers (use rounded values)
+   - Page breaks fall in sensible places (not mid-card)
+   - All 10 pair assessments have substantive analysis (not generic filler)
+   If anything looks off, adjust the report data and regenerate.
+
+5. Tell user: "Executive summary saved to `output/executive-summary.pdf`"

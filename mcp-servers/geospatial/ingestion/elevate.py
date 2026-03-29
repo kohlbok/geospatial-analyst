@@ -10,7 +10,6 @@ from ..config import DATA_GEOSPATIAL, get_bbox
 log = logging.getLogger(__name__)
 
 SRTM_BASE_URL = "https://elevation-tiles-prod.s3.amazonaws.com/skadi"
-OPEN_TOPO_URL = "https://portal.opentopography.org/API/globaldem"
 
 
 def _srtm_tile_name(lat, lon):
@@ -129,14 +128,14 @@ def _fallback_elevation(lat, lon):
     return None
 
 
-def predownload_morocco_tiles():
-    lat_min, lat_max, lon_min, lon_max = get_bbox()
+def predownload_tiles(country_code=None):
+    lat_min, lat_max, lon_min, lon_max = get_bbox(country_code)
     tiles = set()
     for lat in range(int(math.floor(lat_min)), int(math.ceil(lat_max))):
         for lon in range(int(math.floor(lon_min)), int(math.ceil(lon_max))):
             tiles.add(_srtm_tile_name(lat, lon))
 
-    log.info(f"Pre-downloading {len(tiles)} SRTM tiles for Morocco")
+    log.info(f"Pre-downloading {len(tiles)} SRTM tiles")
     success = 0
     for tile_name in sorted(tiles):
         path = _download_srtm_tile(tile_name)
@@ -149,15 +148,16 @@ def predownload_morocco_tiles():
 
 def enrich_dam_elevations(dam_registry):
     log.info(f"Enriching {len(dam_registry)} dams with SRTM elevation data")
-    predownload_morocco_tiles()
+    predownload_tiles()
 
     wall_elevations = []
     centroid_elevations = []
     crosscheck_deltas = []
 
+    import pandas as pd
     for _, dam in dam_registry.iterrows():
         lat, lon = dam["lat"], dam["lon"]
-        if lat is None or lon is None:
+        if lat is None or lon is None or pd.isna(lat) or pd.isna(lon):
             wall_elevations.append(None)
             centroid_elevations.append(None)
             crosscheck_deltas.append(None)
