@@ -4,8 +4,9 @@
 
   "filters": {
     "min_head_m": 100,
-    "max_distance_km": 30,
-    "min_capacity_mcm": 1
+    "max_distance_km": 40,
+    "min_capacity_mcm": 1.5,
+    "max_distance_head_ratio": 50
   },
 
   "screening": {
@@ -24,6 +25,15 @@
     "battery_usd_per_mwh": 300,
     "psh_usd_per_mwh_low": 150,
     "psh_usd_per_mwh_high": 250
+  },
+
+  "cost_model": {
+    "tunneling_eur_per_km": 6500000,
+    "grid_connection_usd_per_km": 1000000,
+    "facility_capex_eur": null,
+    "depreciation_years": 40,
+    "annual_cycles": 300,
+    "eur_to_usd": 1.08
   },
 
   "physics": {

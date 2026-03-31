@@ -61,10 +61,14 @@ PAIR_COLUMNS = [
     ("lower_dam_name", "Lower Dam", 34, "left"),
     ("head_m", "Head (m)", 12, "right"),
     ("distance_km", "Distance (km)", 14, "right"),
+    ("distance_head_ratio", "Dist/Head Ratio", 15, "right"),
     ("energy_mwh_standard", "Energy (MWh)", 15, "right"),
     ("composite_score", "Score", 10, "center"),
     ("psh_cost_usd_per_mwh", "PSH Cost ($/MWh)", 17, "right"),
     ("cost_advantage_pct", "Cost Advantage", 15, "right"),
+    ("lcoe_eur_per_mwh", "LCOE (EUR/MWh)", 16, "right"),
+    ("tunneling_cost_eur", "Tunneling (EUR)", 17, "right"),
+    ("grid_connection_cost_eur", "Grid Connect (EUR)", 17, "right"),
     ("grid_distance_km", "Grid Distance (km)", 17, "right"),
     ("upper_capacity_mcm", "Upper Capacity (MCM)", 19, "right"),
     ("lower_capacity_mcm", "Lower Capacity (MCM)", 19, "right"),
@@ -81,10 +85,14 @@ NUMBER_FORMATS = {
     "grid_distance_km": "0.0",
     "head_m": "#,##0",
     "distance_km": "0.0",
+    "distance_head_ratio": "0.0",
     "energy_mwh_standard": "#,##0",
     "composite_score": "0.000",
     "psh_cost_usd_per_mwh": "$#,##0",
     "cost_advantage_pct": "0.0%",
+    "lcoe_eur_per_mwh": "#,##0",
+    "tunneling_cost_eur": "#,##0",
+    "grid_connection_cost_eur": "#,##0",
     "upper_capacity_mcm": "#,##0",
     "lower_capacity_mcm": "#,##0",
     "rank": "0",
@@ -218,13 +226,17 @@ def _build_summary_sheet(wb, dam_registry, scored_pairs):
     left_params = [
         ("Minimum head", f"{config['filters']['min_head_m']} m"),
         ("Maximum distance", f"{config['filters']['max_distance_km']} km"),
+        ("Max dist/head ratio", f"{config['filters'].get('max_distance_head_ratio', 50)}"),
         ("Minimum capacity", f"{config['filters']['min_capacity_mcm']} MCM"),
         ("Round-trip efficiency", f"{int(config['physics']['round_trip_efficiency'] * 100)}%"),
     ]
+    cm = config.get("cost_model", {})
     right_params = [
         ("Battery storage", f"${config['cost_benchmarks']['battery_usd_per_mwh']}/MWh"),
         ("PSH low estimate", f"${config['cost_benchmarks']['psh_usd_per_mwh_low']}/MWh"),
         ("PSH high estimate", f"${config['cost_benchmarks']['psh_usd_per_mwh_high']}/MWh"),
+        ("Tunneling cost", f"EUR {cm.get('tunneling_eur_per_km', 6_500_000):,.0f}/km"),
+        ("Grid connection", f"${cm.get('grid_connection_usd_per_km', 1_000_000):,.0f}/km"),
     ]
     for i, (label, value) in enumerate(left_params):
         ws.cell(row=row + i, column=2, value=label).font = LABEL_FONT
@@ -363,18 +375,23 @@ def _export_json(dam_registry, scored_pairs):
     output_path = OUTPUT_DIR / "results.json"
     pairs_list = []
     for _, row in scored_pairs.iterrows():
-        pairs_list.append({
+        entry = {
             "rank": int(row.get("rank", 0)),
             "upper_dam": row.get("upper_dam_name"),
             "lower_dam": row.get("lower_dam_name"),
             "head_m": round(row.get("head_m", 0)),
             "distance_km": round(row.get("distance_km", 0), 1),
+            "distance_head_ratio": row.get("distance_head_ratio"),
             "energy_mwh_standard": round(row.get("energy_mwh_standard", 0)),
             "composite_score": round(row.get("composite_score", 0), 4),
             "psh_cost_usd_per_mwh": row.get("psh_cost_usd_per_mwh"),
             "cost_advantage_pct": row.get("cost_advantage_pct"),
+            "lcoe_eur_per_mwh": row.get("lcoe_eur_per_mwh"),
+            "tunneling_cost_eur": row.get("tunneling_cost_eur"),
+            "grid_connection_cost_eur": row.get("grid_connection_cost_eur"),
             "grid_distance_km": row.get("grid_distance_km"),
-        })
+        }
+        pairs_list.append(entry)
 
     result = {
         "generated": datetime.now().isoformat(),
@@ -469,8 +486,10 @@ def _export_geojson(dam_registry, scored_pairs):
                 "lower_dam": pair.get("lower_dam_name"),
                 "head_m": round(pair.get("head_m", 0)),
                 "distance_km": round(pair.get("distance_km", 0), 1),
+                "distance_head_ratio": pair.get("distance_head_ratio"),
                 "energy_mwh": round(pair.get("energy_mwh_standard", 0)),
                 "score": round(pair.get("composite_score", 0), 3),
+                "lcoe_eur_per_mwh": pair.get("lcoe_eur_per_mwh"),
             },
         })
 

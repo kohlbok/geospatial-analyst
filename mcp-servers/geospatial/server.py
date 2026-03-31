@@ -97,8 +97,10 @@ def screen_pairs() -> str:
             "lower_dam": row.get("lower_dam_name", "?"),
             "head_m": round(row.get("head_m", 0)),
             "distance_km": round(row.get("distance_km", 0), 1),
+            "distance_head_ratio": row.get("distance_head_ratio"),
             "energy_mwh": round(row.get("energy_mwh_standard", 0)),
             "score": round(row.get("composite_score", 0), 3),
+            "lcoe_eur_per_mwh": row.get("lcoe_eur_per_mwh"),
         })
 
     return json.dumps({

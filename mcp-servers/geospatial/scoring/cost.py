@@ -39,6 +39,41 @@ def compare_costs(energy_mwh, head_m=None, distance_km=None, tunnel_km=None):
     }
 
 
+def calculate_lcoe(pair):
+    config = load_config()
+    cm = config.get("cost_model", {})
+
+    tunneling_per_km = cm.get("tunneling_eur_per_km", 6_500_000)
+    grid_per_km = cm.get("grid_connection_usd_per_km", 1_000_000)
+    facility_capex = cm.get("facility_capex_eur")
+    depreciation = cm.get("depreciation_years", 40)
+    annual_cycles = cm.get("annual_cycles", 300)
+    eur_to_usd = cm.get("eur_to_usd", 1.08)
+
+    distance_km = pair.get("distance_km")
+    grid_km = pair.get("grid_distance_km")
+    energy_mwh = pair.get("energy_mwh_standard")
+
+    if energy_mwh is None or energy_mwh <= 0 or distance_km is None:
+        return {}
+
+    tunneling_eur = distance_km * tunneling_per_km
+    grid_eur = (grid_km * grid_per_km / eur_to_usd) if grid_km is not None and not pd.isna(grid_km) else 0
+    facility_eur = facility_capex if facility_capex else 0
+
+    total_capex_eur = tunneling_eur + grid_eur + facility_eur
+    lifetime_energy_mwh = energy_mwh * annual_cycles * depreciation
+    lcoe = total_capex_eur / lifetime_energy_mwh if lifetime_energy_mwh > 0 else None
+
+    return {
+        "tunneling_cost_eur": round(tunneling_eur),
+        "grid_connection_cost_eur": round(grid_eur),
+        "facility_capex_eur": round(facility_eur),
+        "total_capex_eur": round(total_capex_eur),
+        "lcoe_eur_per_mwh": round(lcoe, 1) if lcoe else None,
+    }
+
+
 def calculate_all_costs(pairs_df):
     log.info(f"Calculating cost comparison for {len(pairs_df)} pairs")
 
@@ -59,9 +94,17 @@ def calculate_all_costs(pairs_df):
                 tunnel_km=pair.get("tunnel_length_km"),
             )
             row.update(costs)
+
+        lcoe = calculate_lcoe(pair)
+        row.update(lcoe)
+
         results.append(row)
 
     result = pd.DataFrame(results)
     cheaper = result["psh_cheaper"].sum() if "psh_cheaper" in result.columns else 0
     log.info(f"PSH cheaper than batteries: {cheaper}/{len(result)} pairs")
+    if "lcoe_eur_per_mwh" in result.columns:
+        valid_lcoe = result["lcoe_eur_per_mwh"].dropna()
+        if len(valid_lcoe) > 0:
+            log.info(f"LCOE range: {valid_lcoe.min():.0f} - {valid_lcoe.max():.0f} EUR/MWh")
     return result

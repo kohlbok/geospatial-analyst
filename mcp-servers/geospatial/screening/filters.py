@@ -16,7 +16,7 @@ def apply_tier1_filters(pairs_df, params=None):
         params = cfg.get("filters", {})
 
     min_head = params.get("min_head_m", 100)
-    max_ratio = params.get("max_distance_head_ratio", params.get("max_distance_km", 30) * 1000 / params.get("min_head_m", 100))
+    max_ratio = params.get("max_distance_head_ratio", 50)
     min_capacity = params.get("min_capacity_mcm", 1)
     max_distance = params.get("max_distance_km", 30)
 
