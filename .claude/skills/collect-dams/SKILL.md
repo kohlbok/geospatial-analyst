@@ -1,0 +1,1 @@
+../../../plugins/psh-screening/commands/collect-dams.md

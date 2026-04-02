@@ -129,7 +129,7 @@ def _fallback_elevation(lat, lon):
 
 
 def predownload_tiles(country_code=None):
-    lat_min, lat_max, lon_min, lon_max = get_bbox(country_code)
+    lat_min, lat_max, lon_min, lon_max = get_bbox()
     tiles = set()
     for lat in range(int(math.floor(lat_min)), int(math.ceil(lat_max))):
         for lon in range(int(math.floor(lon_min)), int(math.ceil(lon_max))):

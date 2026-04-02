@@ -6,51 +6,100 @@ Screen all dams for pumped storage hydropower (PSH) potential.
 
 Load: methodology, constraints
 
+## Gates
+
+This command has explicit checkpoints where you MUST stop and wait for user confirmation before continuing. Never skip a gate.
+
 ## Steps
+
+### Step 0: Clean Slate
+
+Remove previous results for a fresh run:
+- Delete everything in `output/` (old results, maps, PDFs)
+- Delete `data/.cache/intermediate/` (stale screening intermediates)
+- Do NOT delete `data/.cache/srtm/` or `data/.cache/raw/` (expensive downloads, reusable)
 
 ### Step 1: Load Data
 
-Read `data/dams.json`. Report: total dams, field coverage (elevation, capacity, grid distance), any data quality issues (missing fields, duplicates within 1km, coordinates outside bbox). Keep it brief.
+Call the `load_dam_registry` MCP tool. It returns total dams and field coverage stats.
+
+Present to the user:
+```
+Input: data/dams.json
+Total dams: X
+  Coordinates: X/X
+  Elevation: X/X
+  Height: X/X
+  Capacity: X/X
+  Grid distance: X/X
+```
+
+--- GATE 1 ---
+Ask: "This is the input data. Want to use a different file, or continue?"
+WAIT for user response. Do NOT proceed until they confirm.
 
 ### Step 2: Assumptions
 
-Read `config/parameters.json`. Present the filters, scoring weights, and cost benchmarks. Ask if user wants to adjust anything.
+Read `config/parameters.json`. Present ALL parameters in a clear table:
+```
+Screening Filters:
+  Min head: Xm
+  Max distance: Xkm
+  Min capacity: X MCM
+  Max distance/head ratio: X
+
+Scoring Weights:
+  Energy potential: X
+  Cost advantage: X
+  Grid proximity: X
+  Reservoir quality: X
+
+Cost Model:
+  Penstock: EUR X/km
+  Upper reservoir: EUR X/MCM
+  Lower reservoir: EUR X/MCM
+  Powerhouse: EUR X/MW
+  Fixed costs: EUR X
+  Grid connection: $X/km
+```
+
+--- GATE 2 ---
+Ask: "Want to adjust any of these parameters? Or continue with screening?"
+WAIT for user response. Do NOT proceed until they confirm.
 
 ### Step 3: Generate and Score Pairs
 
-Call `generate_pairs` then `screen_pairs`. Report: total pairs evaluated, how many passed filters, top 10 with rank, names, head, distance, energy, and score.
+Call the `generate_pairs` MCP tool, then `screen_pairs`. Report: total pairs evaluated, how many passed filters, top 10 with rank, names, head, distance, energy, LCOE, and score.
 
 ### Step 4: Outputs
 
-Call `generate_map` and `generate_results`. Tell user where files are:
-- `output/results.xlsx` -- formatted workbook (Dam Registry + Pairs Ranked + Assumptions)
-- `output/results.json` -- machine-readable results
-- `output/map.html` -- interactive map with satellite imagery (open in browser)
-- `output/top_pairs_3d.kml` -- 3D terrain view of top pairs (open in Google Earth)
-- `output/pairs.geojson` -- for GIS tools
+Call `generate_map` and `generate_results` MCP tools.
+
+--- GATE 3 ---
+Ask: "Where should I put the output? Default is `output/` in this repo."
+WAIT for user response. If they give a custom path, copy all files there.
+
+Tell the user where the files are:
+- `results.xlsx` -- formatted workbook (Dam Registry + Pairs Ranked + Assumptions)
+- `results.json` -- machine-readable results
+- `map.html` -- interactive map with satellite imagery
+- `top_pairs_3d.kml` -- 3D terrain view for Google Earth
+- `pairs.geojson` -- for GIS tools
 
 ### Step 5: Expert Review + Executive Summary (optional)
 
-Ask: "Want me to review the top 10 pairs and generate an executive summary PDF?"
+--- GATE 4 ---
+Ask: "Want me to review the top pairs and generate an executive summary PDF?"
+WAIT for user response.
 
 If yes:
 
-1. For each of the top 10 pairs, write a brief honest assessment covering:
-   - Why it works (head, capacity, distance)
-   - Concerns (remoteness, small reservoir, competing water uses based on purpose field)
-   - Grid connection quality (distance, voltage)
-   - Verdict: one of "Strong candidate" / "Worth investigating" / "Marginal"
+1. For each top pair, write an honest assessment: why it works (head, capacity, distance), concerns (remoteness, small reservoir, competing water uses), grid connection quality. Verdict: "Strong candidate" / "Worth investigating" / "Marginal".
 
-2. Present the review to the user in chat.
+2. Present the review in chat.
 
-3. Call `generate_executive_summary` with the expert review data as a JSON list. Each entry needs: rank, upper_dam, lower_dam, head_m, distance_km, energy_mwh, score, grid_distance_km, verdict (one of "Strong candidate" / "Worth investigating" / "Marginal"), assessment (HTML string with `<p><strong>Why it works:</strong>...`, `<strong>Concerns:</strong>...`, `<strong>Grid connection:</strong>...`).
+3. Call `generate_executive_summary` MCP tool with the review data as JSON.
 
-4. Read the generated PDF (`output/executive-summary.pdf`) and visually review it. Check that:
-   - Cover page looks clean with no overflow
-   - Stats, table, and pair cards render properly
-   - No floating point numbers (use rounded values)
-   - Page breaks fall in sensible places (not mid-card)
-   - All 10 pair assessments have substantive analysis (not generic filler)
-   If anything looks off, adjust the report data and regenerate.
+4. Read the generated PDF and visually check it renders correctly. Regenerate if needed.
 
-5. Tell user: "Executive summary saved to `output/executive-summary.pdf`"
+5. Tell user where the PDF was saved.

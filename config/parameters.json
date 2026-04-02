@@ -28,9 +28,12 @@
   },
 
   "cost_model": {
-    "tunneling_eur_per_km": 6500000,
+    "penstock_eur_per_km": 43000000,
+    "reservoir_upper_eur_per_mcm": 14000000,
+    "reservoir_lower_eur_per_mcm": 36000000,
+    "powerhouse_eur_per_mw": 490000,
+    "fixed_costs_eur": 42000000,
     "grid_connection_usd_per_km": 1000000,
-    "facility_capex_eur": null,
     "depreciation_years": 40,
     "annual_cycles": 300,
     "eur_to_usd": 1.08
@@ -38,5 +41,9 @@
 
   "physics": {
     "round_trip_efficiency": 0.78
+  },
+
+  "ingestion": {
+    "proximity_threshold_m": 500
   }
 }

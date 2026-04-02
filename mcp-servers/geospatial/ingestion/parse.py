@@ -24,6 +24,13 @@ def parse_tabular(path, column_mapping, filters=None, output_name="parsed"):
     log.info(f"Read {len(df)} rows from {path.name}")
 
     if filters:
+        has_country_filter = any(f.get("type") == "country" for f in filters)
+        if fmt == "shapefile" and df is not None and has_country_filter:
+            from ..config import get_bbox
+            lat_min, lat_max, lon_min, lon_max = get_bbox()
+            import geopandas as gpd
+            df = gpd.read_file(path, bbox=(lon_min, lat_min, lon_max, lat_max))
+            log.info(f"Re-read shapefile with country bbox: {len(df)} rows")
         df = _apply_filters(df, filters)
         log.info(f"After filtering: {len(df)} rows")
 
@@ -36,6 +43,9 @@ def parse_tabular(path, column_mapping, filters=None, output_name="parsed"):
     out_path = STAGING_DIR / f"{output_name}.json"
     with open(out_path, "w") as f:
         json.dump(records, f, indent=2, default=str)
+
+    from .staging import save_staged_source
+    save_staged_source(output_name, records)
 
     has_coords = sum(1 for r in records if r.get("lat") is not None and r.get("lon") is not None)
     has_name = sum(1 for r in records if r.get("name"))
@@ -117,6 +127,29 @@ def _apply_filters(df, filters):
             col = filt["column"]
             if col in df.columns:
                 df = df[df[col].notna()].copy()
+
+        elif ftype == "in":
+            col = filt["column"]
+            values = filt["values"]
+            if col in df.columns:
+                df = df[df[col].isin(values)].copy()
+
+        elif ftype == "country":
+            lat_col = filt.get("lat_col", "lat")
+            lon_col = filt.get("lon_col", "lon")
+            from ..config import get_country_boundary
+            boundary = get_country_boundary()
+            if boundary is not None and lat_col in df.columns and lon_col in df.columns:
+                from shapely.geometry import Point
+                df[lat_col] = pd.to_numeric(df[lat_col], errors="coerce")
+                df[lon_col] = pd.to_numeric(df[lon_col], errors="coerce")
+                mask = df.apply(
+                    lambda r: boundary.contains(Point(r[lon_col], r[lat_col]))
+                    if pd.notna(r[lat_col]) and pd.notna(r[lon_col]) else False,
+                    axis=1,
+                )
+                df = df[mask].copy()
+                log.info(f"Country boundary filter: {len(df)} rows inside boundary")
 
     return df
 

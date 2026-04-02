@@ -15,7 +15,7 @@ fail() { printf "\033[1;31m  FAIL: %s\033[0m\n" "$1"; exit 1; }
 header "Checking Python"
 
 PYTHON=""
-for candidate in python3.12 python3.11 python3.10 python3; do
+for candidate in python3.13 python3.12 python3.11 python3.10 python3; do
     if command -v "$candidate" &>/dev/null; then
         version=$("$candidate" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
         major=$("$candidate" -c "import sys; print(sys.version_info.major)")
@@ -101,13 +101,24 @@ mkdir -p data/.cache/srtm data/.cache/raw data/.cache/intermediate
 mkdir -p output
 success "Directories ready"
 
+# ---------- Generate .mcp.json ----------
+header "Generating .mcp.json"
+
+TEMPLATE="$SCRIPT_DIR/.mcp.json.template"
+MCP_OUTPUT="$SCRIPT_DIR/.mcp.json"
+
+if [ ! -f "$TEMPLATE" ]; then
+    fail ".mcp.json.template not found"
+fi
+
+sed "s|{{PYTHON_PATH}}|.venv/bin/python3|g" "$TEMPLATE" > "$MCP_OUTPUT"
+success ".mcp.json configured"
+
 # ---------- Summary ----------
 header "Setup complete"
 echo ""
-echo "  To activate the environment:"
-echo "    source $VENV_DIR/bin/activate"
-echo ""
 echo "  To screen dams:"
-echo "    claude"
-echo "    /screen-dams"
+echo "    1. Open Claude Code: claude"
+echo "    2. Drop your dam data into data/dams.xlsx"
+echo "    3. Run /screen-dams"
 echo ""

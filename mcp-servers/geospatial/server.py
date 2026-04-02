@@ -8,8 +8,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fastmcp import FastMCP
 
 from geospatial.config import (
-    load_config, reload_config, load_dams,
-    DAMS_INPUT, DATA_PROCESSED, OUTPUT_DIR,
+    load_config, reload_config, load_dams, save_dams,
+    list_data_files, set_active_file, get_active_file,
+    DATA_PROCESSED, OUTPUT_DIR,
 )
 
 logging.basicConfig(
@@ -22,14 +23,42 @@ mcp = FastMCP("PSH Screening")
 
 
 @mcp.tool()
-def load_dam_registry() -> str:
-    """Load the dam registry from data/dams.json. Returns dam count and sample data."""
+def load_dam_registry(file: str = "") -> str:
+    """Load a dam registry from the data/ directory. Pass a filename to select it, or omit to list available files."""
+    if not file:
+        files = list_data_files()
+        if not files:
+            return json.dumps({"error": "No data files found in data/. Place a .json, .xlsx, or .csv file there."})
+        active = get_active_file()
+        return json.dumps({"available_files": files, "active": active.name if active else None})
+
+    result = set_active_file(file)
+    if result is None:
+        return json.dumps({"error": f"File '{file}' not found in data/"})
+    if result == "needs_parsing":
+        return json.dumps({
+            "status": "needs_parsing",
+            "file": file,
+            "message": f"'{file}' needs to be converted to JSON first. Use inspect_file to see its columns, then parse_tabular to convert it with the right column mapping. The output JSON should be saved as '{Path(file).stem}.json' in data/.",
+        })
+
     dams = load_dams()
     if dams is None:
-        return json.dumps({"error": "No data/dams.json found. Place your dam data file there first."})
+        return json.dumps({"error": f"Could not parse '{file}'."})
+
+    total = len(dams)
+    coverage = {
+        "coordinates": sum(1 for d in dams if d.get("lat") is not None),
+        "elevation": sum(1 for d in dams if d.get("elevation_wall_m") is not None or d.get("elevation_m") is not None),
+        "height": sum(1 for d in dams if d.get("height_m") is not None),
+        "capacity": sum(1 for d in dams if d.get("capacity_mcm") is not None and d.get("capacity_mcm", 0) > 0),
+        "grid_distance": sum(1 for d in dams if d.get("grid_distance_km") is not None),
+    }
+
     return json.dumps({
         "status": "ok",
-        "total_dams": len(dams),
+        "total_dams": total,
+        "coverage": coverage,
         "sample": dams[:3],
     }, default=str)
 
@@ -42,10 +71,11 @@ def generate_pairs() -> str:
 
     dams = load_dams()
     if dams is None:
-        return json.dumps({"error": "No data/dams.json found"})
+        return json.dumps({"error": "No data file selected. Call load_dam_registry first."})
 
     registry = pd.DataFrame(dams)
-    registry["elevation_wall_m"] = registry["elevation_m"]
+    if "elevation_wall_m" not in registry.columns or registry["elevation_wall_m"].isna().all():
+        registry["elevation_wall_m"] = registry.get("elevation_m")
 
     pairs = do_generate(registry)
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
@@ -120,7 +150,7 @@ def generate_map() -> str:
 
     dams = load_dams()
     if dams is None:
-        return json.dumps({"error": "No data/dams.json found"})
+        return json.dumps({"error": "No data file selected. Call load_dam_registry first."})
 
     scored_path = DATA_PROCESSED / "scored_pairs.json"
     scored = pd.read_json(scored_path) if scored_path.exists() else None
@@ -138,7 +168,7 @@ def generate_results() -> str:
 
     dams = load_dams()
     if dams is None:
-        return json.dumps({"error": "No data/dams.json found"})
+        return json.dumps({"error": "No data file selected. Call load_dam_registry first."})
 
     scored_path = DATA_PROCESSED / "scored_pairs.json"
     if not scored_path.exists():
@@ -157,7 +187,7 @@ def generate_executive_summary(expert_review: str) -> str:
 
     dams = load_dams()
     if dams is None:
-        return json.dumps({"error": "No data/dams.json found"})
+        return json.dumps({"error": "No data file selected. Call load_dam_registry first."})
 
     scored_path = DATA_PROCESSED / "scored_pairs.json"
     if not scored_path.exists():
@@ -264,13 +294,72 @@ def parse_tabular(path: str, column_mapping: str, filters: str = "[]", output_na
 
 
 @mcp.tool()
+def merge_sources(proximity_threshold_m: int = 0) -> str:
+    """Merge all staged dam sources using coordinate proximity clustering. Saves merged dams to data/dams.json. Returns stats and edge cases (records without coordinates for agent review)."""
+    from geospatial.ingestion.staging import load_all_staged
+    from geospatial.ingestion.merge import merge_sources as do_merge
+
+    staged = load_all_staged()
+    if not staged:
+        return json.dumps({"error": "No staged sources found. Run parse_tabular first to stage data."})
+
+    config = load_config()
+    threshold = proximity_threshold_m or config.get("ingestion", {}).get("proximity_threshold_m", 500)
+
+    result = do_merge(staged, threshold_m=threshold)
+
+    save_dams(result["dams"])
+
+    edge_case_summary = []
+    for ec in result["edge_cases"][:20]:
+        edge_case_summary.append({
+            "name": ec.get("name", "Unknown"),
+            "source": ec.get("_source", ""),
+            "height_m": ec.get("height_m"),
+            "capacity_mcm": ec.get("capacity_mcm"),
+        })
+
+    return json.dumps({
+        "status": "ok",
+        "stats": result["stats"],
+        "output_path": str(get_active_file() or "data/"),
+        "edge_cases": edge_case_summary,
+        "edge_case_count": len(result["edge_cases"]),
+    }, default=str)
+
+
+@mcp.tool()
+def enrich_names() -> str:
+    """Look up canonical names for all dams from OpenStreetMap water features. Single batch query, matches by proximity."""
+    from geospatial.ingestion.osm import enrich_dams_with_names
+
+    dams = load_dams()
+    if dams is None:
+        return json.dumps({"error": "No data file selected. Call load_dam_registry first."})
+
+    enriched = enrich_dams_with_names(dams)
+    save_dams(enriched)
+
+    from_osm = sum(1 for d in enriched if d.get("name_source") == "osm")
+    still_unknown = sum(1 for d in enriched if d.get("name") in (None, "", "Unknown"))
+
+    return json.dumps({
+        "status": "ok",
+        "total_dams": len(enriched),
+        "named_from_osm": from_osm,
+        "still_unnamed": still_unknown,
+        "sample": [{"name": d["name"], "name_source": d.get("name_source"), "name_distance_km": d.get("name_distance_km")} for d in enriched[:5]],
+    }, default=str)
+
+
+@mcp.tool()
 def enrich_grid_distance(max_workers: int = 3) -> str:
     """Look up nearest power substation (OpenStreetMap) for each dam. Adds grid_distance_km to dams.json. Runs in parallel."""
     from geospatial.ingestion.osm import enrich_dams_with_grid
 
     dams = load_dams()
     if dams is None:
-        return json.dumps({"error": "No data/dams.json found"})
+        return json.dumps({"error": "No data file selected. Call load_dam_registry first."})
 
     already = sum(1 for d in dams if d.get("grid_distance_km") is not None)
     if already == len(dams):
@@ -278,8 +367,7 @@ def enrich_grid_distance(max_workers: int = 3) -> str:
 
     enriched = enrich_dams_with_grid(dams, max_workers=max_workers)
 
-    with open(str(DAMS_INPUT), "w") as f:
-        json.dump(enriched, f, indent=2, default=str)
+    save_dams(enriched)
 
     with_grid = sum(1 for d in enriched if d.get("grid_distance_km") is not None)
     avg_dist = sum(d["grid_distance_km"] for d in enriched if d.get("grid_distance_km")) / max(with_grid, 1)
@@ -301,14 +389,13 @@ def enrich_elevation() -> str:
 
     dams = load_dams()
     if dams is None:
-        return json.dumps({"error": "No data/dams.json found"})
+        return json.dumps({"error": "No data file selected. Call load_dam_registry first."})
 
     registry = pd.DataFrame(dams)
     enriched = enrich_dam_elevations(registry)
 
     result_dams = enriched.to_dict("records")
-    with open(DAMS_INPUT, "w") as f:
-        json.dump(result_dams, f, indent=2, default=str)
+    save_dams(result_dams)
 
     missing = enriched["elevation_wall_m"].isna().sum()
     return json.dumps({

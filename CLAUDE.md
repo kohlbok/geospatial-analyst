@@ -15,10 +15,14 @@ data/
 config/
   parameters.json                  Filters, scoring weights, cost benchmarks (~20 lines)
 
+commands/
+  setup.md                         Install deps, configure MCP server
+
 plugins/
   psh-screening/
     commands/
-      screen-dams.md               Main command: end-to-end PSH screening workflow
+      collect-dams.md              Collect dam data for any country from global databases
+      screen-dams.md               Screen collected dams for PSH potential
     skills/
       methodology/SKILL.md         Scoring formulas, energy calculations, process overview
       constraints/SKILL.md         Engineering filter thresholds
@@ -27,12 +31,12 @@ plugins/
 
 mcp-servers/
   geospatial/
-    server.py                      FastMCP server: 11 MCP tools
+    server.py                      FastMCP server: 12 MCP tools
     config.py                      Paths, config loading
     geo.py                         Haversine distance calculations
     ingestion/                     Data collection and enrichment
-      download.py                  Database downloaders (FAO, GeoDAR, HydroLAKES)
-      merge.py                     Dam registry deduplication and merging
+      download.py                  Generic file download utilities
+      merge.py                     Proximity-based dam deduplication (Union-Find clustering)
       elevate.py                   SRTM 30m elevation enrichment
       osm.py                       OpenStreetMap grid distance lookup
       inspect.py                   Generic file inspection (CSV, Excel, Shapefile)
@@ -77,6 +81,7 @@ output/                            Generated results (gitignored)
 | `generate_map` | Interactive HTML map with satellite imagery |
 | `generate_results` | Excel, JSON, 3D KML, GeoJSON exports |
 | `generate_executive_summary` | PDF report with expert pair assessments |
+| `merge_sources` | Merge all staged dam sources by coordinate proximity |
 | `enrich_grid_distance` | Look up nearest HV substation per dam (OpenStreetMap) |
 | `enrich_elevation` | Add SRTM 30m elevation data |
 | `download_file` | Download any URL to cache |
@@ -86,7 +91,7 @@ output/                            Generated results (gitignored)
 ## How It Works
 
 - **Skills** are domain knowledge the agent loads: methodology, constraints, data sources
-- **Commands** are workflows the agent executes: `/screen-dams` orchestrates load, validate, score, output
+- **Commands** are workflows the agent executes: `/collect-dams` gathers data, `/screen-dams` screens for PSH potential
 - **MCP server** is the typed tool interface: every operation is an MCP tool with explicit arguments and structured output
 - **Data** lives in `data/dams.json`, a single clean file the agent reads and the user can edit
 

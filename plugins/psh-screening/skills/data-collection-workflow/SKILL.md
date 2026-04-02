@@ -2,7 +2,7 @@
 
 ## Overview
 
-This skill teaches how to collect, inspect, and merge dam data for any country using the generic MCP tools. The agent drives the entire process -- figuring out column mappings, data quality, and deduplication strategy.
+This skill teaches how to collect, inspect, and merge dam data for any country using the generic MCP tools. The agent drives the entire process -- figuring out column mappings, data quality, and reviewing merge results.
 
 ## Unified Dam Schema
 
@@ -27,18 +27,17 @@ Every source gets mapped to this schema before staging:
 
 ### Step 1: Set Up Country
 
-Read `config/parameters.json` to get the country config (bbox, FAO code). If the country isn't configured yet, add it.
+Read `config/parameters.json` to get the country config (bbox, country name). If the country isn't configured yet, add it.
 
 ### Step 2: Collect Global Sources
 
 These sources cover most countries. Process each one:
 
 **FAO AQUASTAT** (best for names, height, capacity, purpose)
-1. Call `download_file` with the country's FAO URL from config
+1. Call `download_file` with the country's FAO URL
 2. Call `inspect_file` to see the Excel structure (header row, column names)
 3. Determine column mapping by reading the sample rows
-4. Call `parse_tabular` with the mapping and country filter
-5. Call `save_staged_source` with the parsed records
+4. Call `parse_tabular` with the mapping and country/bbox filter
 
 **GeoDAR + GRanD** (best for coordinates, cross-validated)
 1. Call `download_file` for GeoDAR from Zenodo
@@ -51,7 +50,6 @@ These sources cover most countries. Process each one:
 1. Call `download_file` for HydroLAKES shapefile
 2. Call `inspect_file` to see columns
 3. Call `parse_tabular` with bbox filter and type filter (Lake_type in [1,2,3] for reservoirs)
-4. Stage the results
 
 ### Step 3: Find Country-Specific Sources
 
@@ -69,7 +67,7 @@ For each source found:
 
 ### Step 4: Review Staged Sources
 
-Call `list_staged_sources` to see coverage statistics:
+Review coverage statistics across all staged sources:
 - How many records per source?
 - What percentage have coordinates?
 - What percentage have height and capacity?
@@ -77,31 +75,20 @@ Call `list_staged_sources` to see coverage statistics:
 
 Report findings to the user before merging.
 
-### Step 5: Build Merge Config
+### Step 5: Merge
 
-Construct the merge configuration based on source inspection:
+Call `merge_sources`. This uses proximity-based deduplication:
+- Records within the configured proximity threshold (default 500m) are treated as the same dam
+- Merged dams get the best name, averaged coordinates, max height/capacity
+- Records without coordinates become edge cases for agent review
 
-```json
-{
-  "country_code": "MAR",
-  "backbone_source": "fao",
-  "proximity_threshold_m": 2000,
-  "sources_priority": ["fao", "grand", "geodar", "wikipedia", "hydrolakes"],
-  "name_aliases": {},
-  "known_coordinates": {}
-}
-```
+### Step 6: Review Edge Cases
 
-- **backbone_source**: The source with the most complete dam list (usually FAO)
-- **sources_priority**: Order in which sources are processed for enrichment
-- **name_aliases**: Map names that refer to the same dam but differ across sources
-- **known_coordinates**: Manually looked-up coordinates for important dams without coords
-
-Build aliases by comparing source records -- if two sources have dams with similar capacity/height at different names, they're likely the same dam.
-
-### Step 6: Merge
-
-Call `merge_staged_sources` with the config. Review the output stats.
+For records without coordinates that couldn't be merged automatically:
+- The agent reviews each one by name, capacity, height, river
+- Determines if it matches an existing dam (agent judgment, not fuzzy matching)
+- If matched, update the dam record directly
+- If unmatched and the dam seems real, note it as missing coordinates
 
 ### Step 7: Enrich with Elevation
 
@@ -129,18 +116,10 @@ Common column names across databases:
 - If area is in hectares: divide by 100
 - If area is in square meters: divide by 1,000,000
 
-## Deduplication Strategy
-
-1. **By name**: Normalize (strip prefixes like "Barrage de/du/d'", "Dam", lowercase, remove accents)
-2. **By coordinate proximity**: Two records within 2km are likely the same dam
-3. **By capacity matching**: If no coords but capacity ratio > 0.7, might be the same
-4. **Manual aliases**: For dams with completely different names across sources (common with Arabic/French/English transliteration)
-
 ## Quality Validation
 
 After merging, check:
 - Total dam count vs expected (from official statistics)
 - Coordinate coverage percentage
 - Height and capacity coverage for dams > 10 MCM
-- No duplicate GRanD IDs
 - All major known dams present (spot-check top 10 by capacity)
