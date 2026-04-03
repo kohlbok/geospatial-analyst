@@ -22,43 +22,54 @@ def calculate_energy(head_m, volume_m3, efficiency=None):
     return energy_mwh
 
 
-def calculate_pair_energy(pair, fill_levels=None):
-    if fill_levels is None:
-        fill_levels = {"conservative": 0.3, "standard": 0.6, "optimistic": 0.9}
+def calculate_pair_energy(pair):
+    config = load_config()
+    physics = config.get("physics", {})
+
+    fill_fraction = physics.get("usable_volume_fraction", 0.6)
+    duration_hours = physics.get("power_duration_hours", 8)
 
     upper_cap = pair.get("upper_capacity_mcm")
     lower_cap = pair.get("lower_capacity_mcm")
     head = pair.get("head_m")
 
     if head is None or pd.isna(head):
-        return {f"energy_mwh_{level}": None for level in fill_levels}
+        return {"energy_mwh_standard": None}
+
+    upper_valid = upper_cap is not None and not pd.isna(upper_cap)
+    lower_valid = lower_cap is not None and not pd.isna(lower_cap)
+
+    if upper_valid and lower_valid:
+        data_quality = "complete"
+    elif upper_valid or lower_valid:
+        data_quality = "partial"
+    else:
+        return {"energy_mwh_standard": None, "data_quality": "missing"}
 
     caps = [c for c in [upper_cap, lower_cap] if c is not None and not pd.isna(c)]
-    if not caps:
-        return {f"energy_mwh_{level}": None for level in fill_levels}
-
     usable_volume_mcm = min(caps)
     usable_volume_m3 = usable_volume_mcm * 1e6
+    vol = usable_volume_m3 * fill_fraction
 
-    results = {}
-    for level_name, fill_fraction in fill_levels.items():
-        vol = usable_volume_m3 * fill_fraction
-        mwh = calculate_energy(head, vol)
-        results[f"energy_mwh_{level_name}"] = round(mwh, 1)
+    energy_mwh = calculate_energy(head, vol)
+    power_mw = energy_mwh / duration_hours
 
-    power_mw = calculate_energy(head, usable_volume_m3 * fill_levels["standard"]) / 8
-    results["power_mw_8hr"] = round(power_mw, 1)
-
-    return results
+    return {
+        "energy_mwh_standard": round(energy_mwh, 1),
+        f"power_mw_{duration_hours}hr": round(power_mw, 1),
+        "data_quality": data_quality,
+    }
 
 
 def calculate_all_energies(pairs_df):
     log.info(f"Calculating energy for {len(pairs_df)} pairs")
 
+    from ..config import scrub_nan
+
     energy_rows = []
     for _, pair in pairs_df.iterrows():
-        row = pair.to_dict()
-        energy = calculate_pair_energy(pair)
+        row = scrub_nan(pair.to_dict())
+        energy = calculate_pair_energy(row)
         row.update(energy)
         energy_rows.append(row)
 

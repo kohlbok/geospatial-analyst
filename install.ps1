@@ -65,17 +65,20 @@ packages = [
     ('geopandas', 'geopandas'),
     ('rasterio', 'rasterio'),
     ('shapely', 'shapely'),
-    ('fiona', 'fiona'),
+    ('pyogrio', 'pyogrio'),
     ('folium', 'folium'),
     ('pandas', 'pandas'),
     ('numpy', 'numpy'),
     ('openpyxl', 'openpyxl'),
     ('simplekml', 'simplekml'),
+    ('orjson', 'orjson'),
     ('requests', 'requests'),
     ('matplotlib', 'matplotlib'),
     ('fastmcp', 'fastmcp'),
     ('overpy', 'overpy'),
     ('jinja2', 'jinja2'),
+]
+optional = [
     ('weasyprint', 'weasyprint'),
 ]
 for name, module in packages:
@@ -84,6 +87,13 @@ for name, module in packages:
     except ImportError as e:
         failures.append(f'{name}: {e}')
 
+warnings = []
+for name, module in optional:
+    try:
+        __import__(module)
+    except ImportError:
+        warnings.append(name)
+
 if failures:
     print('Import failures:')
     for f in failures:
@@ -91,6 +101,8 @@ if failures:
     sys.exit(1)
 else:
     print(f'All {len(packages)} packages import successfully')
+    if warnings:
+        print('Optional (PDF export): ' + ', '.join(warnings) + ' not available')
 "@
 
 Success "All imports verified"
@@ -125,6 +137,6 @@ Header "Setup complete"
 Write-Host ""
 Write-Host "  To screen dams:"
 Write-Host "    1. Open Claude Code: claude"
-Write-Host "    2. Drop your dam data into data/dams.xlsx"
-Write-Host "    3. Run /screen-dams"
+Write-Host "    2. Drop your data files into data/"
+Write-Host "    3. Run /normalize-dams then /screen-dams"
 Write-Host ""

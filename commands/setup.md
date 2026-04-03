@@ -16,5 +16,12 @@ Install dependencies and configure MCP servers for the current platform.
      Python: [version]
      MCP server: geospatial configured
 
-   Ready to go. Run /screen-dams to start screening.
+   Ready to go. Drop your data files into data/ and run:
+     /collect-dams [country] - to collect from global databases
+     /normalize-dams - to transform an existing file for screening
+     /screen-dams - to screen for PSH potential
+
+   IMPORTANT: Start a new session to connect the MCP server.
+     CLI: type /mcp to reload, or restart claude
+     Desktop app: click "New session" in the sidebar
    ```

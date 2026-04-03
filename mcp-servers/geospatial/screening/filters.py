@@ -52,27 +52,17 @@ def apply_tier1_filters(pairs_df, params=None):
             status = "fail"
             reasons.append(f"lower reservoir {lower_cap} MCM < {min_capacity} MCM minimum")
 
-        if status == "pass":
-            head_margin = (pair["head_m"] - min_head) / min_head
-            ratio_margin = (max_ratio - pair["distance_head_ratio"]) / max_ratio
-            if head_margin < 0.1 or ratio_margin < 0.1:
-                status = "borderline"
-                reasons.append("near threshold boundaries")
-
-        row = pair.to_dict()
+        from ..config import scrub_nan
+        row = scrub_nan(pair.to_dict())
         row["tier1_status"] = status
         row["tier1_reasons"] = "; ".join(reasons) if reasons else "all criteria met"
         results.append(row)
 
     result_df = pd.DataFrame(results)
-    passed = result_df[result_df["tier1_status"].isin(["pass", "borderline"])]
+    passed = result_df[result_df["tier1_status"] == "pass"]
     failed = result_df[result_df["tier1_status"] == "fail"]
-    borderline = result_df[result_df["tier1_status"] == "borderline"]
 
-    log.info(
-        f"Tier 1 results: {len(passed)} pass ({len(borderline)} borderline), "
-        f"{len(failed)} fail"
-    )
+    log.info(f"Tier 1 results: {len(passed)} pass, {len(failed)} fail")
     return result_df
 
 
@@ -83,15 +73,15 @@ def apply_tier2_filters(pairs_df, dam_registry=None):
 
     log.info(f"Tier 2 filters on {len(pairs_df)} pairs")
 
-    passed = pairs_df[pairs_df["tier1_status"].isin(["pass", "borderline"])].copy()
+    passed = pairs_df[pairs_df["tier1_status"] == "pass"].copy()
     failed = pairs_df[pairs_df["tier1_status"] == "fail"].copy()
 
     protected_areas = _load_protected_areas()
 
     results = []
     for _, pair in passed.iterrows():
-        row = pair.to_dict()
-        status = pair.get("tier1_status", "pass")
+        row = scrub_nan(pair.to_dict())
+        status = row.get("tier1_status", "pass")
         reasons = []
 
         if protected_areas is not None:
@@ -110,13 +100,13 @@ def apply_tier2_filters(pairs_df, dam_registry=None):
         results.append(row)
 
     for _, pair in failed.iterrows():
-        row = pair.to_dict()
+        row = scrub_nan(pair.to_dict())
         row["tier2_status"] = "fail"
         row["tier2_reasons"] = "failed tier 1"
         results.append(row)
 
     result_df = pd.DataFrame(results)
-    viable = result_df[result_df["tier2_status"].isin(["pass", "borderline"])]
+    viable = result_df[result_df["tier2_status"] == "pass"]
     log.info(f"Tier 2 results: {len(viable)} viable pairs")
     return result_df
 

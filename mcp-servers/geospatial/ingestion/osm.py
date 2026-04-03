@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import overpy
 
+from ..config import load_config
 from ..geo import haversine_km
 
 log = logging.getLogger(__name__)
@@ -12,7 +13,9 @@ OVERPASS_DELAY = 5
 MAX_RETRIES = 5
 
 
-MIN_VOLTAGE_KV = 60
+def _grid_config():
+    config = load_config()
+    return config.get("grid", {})
 
 
 def _parse_max_voltage_kv(voltage_str):
@@ -30,7 +33,12 @@ def _parse_max_voltage_kv(voltage_str):
     return max_v / 1000
 
 
-def nearest_substation(lat, lon, radius_km=50):
+def nearest_substation(lat, lon, radius_km=None):
+    grid_cfg = _grid_config()
+    if radius_km is None:
+        radius_km = grid_cfg.get("search_radius_km", 50)
+    min_voltage_kv = grid_cfg.get("min_voltage_kv", 60)
+
     api = overpy.Overpass()
     query = f"""
     [out:json][timeout:30];
@@ -54,7 +62,7 @@ def nearest_substation(lat, lon, radius_km=50):
                 voltage_kv = _parse_max_voltage_kv(way.tags.get("voltage"))
                 candidates.append((d, way.tags.get("name", "unnamed"), voltage_kv))
 
-            hv = [c for c in candidates if c[2] >= MIN_VOLTAGE_KV]
+            hv = [c for c in candidates if c[2] >= min_voltage_kv]
             best = min(hv, key=lambda c: c[0]) if hv else (min(candidates, key=lambda c: c[0]) if candidates else None)
 
             if best is None:
@@ -86,6 +94,7 @@ def _fetch_all_substations():
     );
     out center tags;
     """
+    min_voltage_kv = _grid_config().get("min_voltage_kv", 60)
     log.info(f"Fetching all substations in bbox [{lat_min:.1f},{lat_max:.1f},{lon_min:.1f},{lon_max:.1f}]")
 
     for attempt in range(MAX_RETRIES):
@@ -108,7 +117,7 @@ def _fetch_all_substations():
                     "name": way.tags.get("name", "unnamed"),
                     "voltage_kv": voltage_kv,
                 })
-            log.info(f"Found {len(substations)} substations ({sum(1 for s in substations if s['voltage_kv'] >= MIN_VOLTAGE_KV)} HV)")
+            log.info(f"Found {len(substations)} substations ({sum(1 for s in substations if s['voltage_kv'] >= min_voltage_kv)} HV)")
             return substations
         except Exception as e:
             wait = OVERPASS_DELAY * (attempt + 1) * 2
@@ -128,7 +137,11 @@ def enrich_dams_with_grid(dams, max_workers=3):
         log.warning("No substations found, falling back to per-dam queries")
         return _enrich_dams_one_by_one(dams, max_workers)
 
-    hv_subs = [s for s in substations if s["voltage_kv"] >= MIN_VOLTAGE_KV]
+    grid_cfg = _grid_config()
+    min_voltage_kv = grid_cfg.get("min_voltage_kv", 60)
+    max_grid_distance_km = grid_cfg.get("max_distance_km", 200)
+
+    hv_subs = [s for s in substations if s["voltage_kv"] >= min_voltage_kv]
     search_list = hv_subs if hv_subs else substations
 
     enriched = []
@@ -150,7 +163,7 @@ def enrich_dams_with_grid(dams, max_workers=3):
                 best_dist = d
                 best_sub = sub
 
-        if best_sub and best_dist < 200:
+        if best_sub and best_dist < max_grid_distance_km:
             dam_copy["grid_distance_km"] = round(best_dist, 1)
             dam_copy["nearest_substation"] = best_sub["name"]
             dam_copy["substation_voltage_kv"] = best_sub["voltage_kv"] if best_sub["voltage_kv"] > 0 else None
@@ -187,17 +200,26 @@ def _fetch_all_water_features():
     for attempt in range(MAX_RETRIES):
         try:
             result = api.query(query)
+            name_tags = _grid_config().get("osm_name_tags", ["name", "name:fr", "name:ar"])
+
+            def _first_name(tags):
+                for tag in name_tags:
+                    val = tags.get(tag)
+                    if val:
+                        return val
+                return None
+
             features = []
             for node in result.nodes:
-                name = node.tags.get("name") or node.tags.get("name:fr") or node.tags.get("name:ar")
+                name = _first_name(node.tags)
                 if name:
                     features.append({"lat": float(node.lat), "lon": float(node.lon), "name": name})
             for way in result.ways:
-                name = way.tags.get("name") or way.tags.get("name:fr") or way.tags.get("name:ar")
+                name = _first_name(way.tags)
                 if name:
                     features.append({"lat": float(way.center_lat), "lon": float(way.center_lon), "name": name})
             for rel in result.relations:
-                name = rel.tags.get("name") or rel.tags.get("name:fr") or rel.tags.get("name:ar")
+                name = _first_name(rel.tags)
                 if name and hasattr(rel, "center_lat"):
                     features.append({"lat": float(rel.center_lat), "lon": float(rel.center_lon), "name": name})
             log.info(f"Found {len(features)} named water features")
@@ -237,7 +259,8 @@ def enrich_dams_with_names(dams):
                 best_dist = d
                 best_name = feat["name"]
 
-        if best_name and best_dist < 5:
+        name_match_radius = _grid_config().get("name_match_radius_km", 5)
+        if best_name and best_dist < name_match_radius:
             old_name = dam_copy.get("name")
             dam_copy["name"] = best_name
             alt = dam_copy.get("alt_names", [])

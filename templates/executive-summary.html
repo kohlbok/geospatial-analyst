@@ -40,6 +40,37 @@ body {
   line-height: 1.65;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
+  max-width: 210mm;
+  margin: 0 auto;
+  padding: 10mm;
+  background: #f0f0f0;
+}
+
+@media screen {
+  .cover, .content-page {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 3mm;
+    padding: 15mm 20mm;
+    margin-bottom: 8mm;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .cover {
+    width: auto;
+    height: auto;
+    padding: 20mm 25mm;
+  }
+  .report-footer {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 3mm;
+    padding: 8mm 20mm;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+}
+
+@media print {
+  body { max-width: none; margin: 0; padding: 0; background: white; }
 }
 p { margin-bottom: 3mm; }
 p:last-child { margin-bottom: 0; }
@@ -299,6 +330,10 @@ td.score {
   font-size: 14pt;
   font-weight: 400;
   color: var(--black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 110mm;
 }
 
 .verdict-badge {
@@ -372,7 +407,7 @@ td.score {
   <div class="cover-rule"></div>
   <div class="cover-body">
     <h1>Pumped Storage Hydropower Site Screening</h1>
-    <p class="cover-brief">{{ total_dams }} dams evaluated across {{ country }}. {{ viable_pairs }} viable pairs identified and ranked by energy potential, cost competitiveness, grid proximity, and reservoir quality.</p>
+    <p class="cover-brief">{{ total_dams }} dams evaluated across {{ country }}. {{ viable_pairs }} viable pairs identified and ranked by energy potential (40%), cost competitiveness vs battery CAPEX (35%), and grid proximity (25%).</p>
   </div>
   <div class="cover-footer">
     <div class="cover-meta-item">
@@ -421,21 +456,35 @@ td.score {
 
   <div class="params-grid">
     <div class="param-box">
-      <h4>Filters</h4>
+      <h4>Screening Filters</h4>
       <ul>
         <li>Minimum head: {{ min_head_m }}m</li>
         <li>Maximum distance: {{ max_distance_km }}km</li>
         <li>Minimum capacity: {{ min_capacity_mcm }} MCM</li>
+        <li>Max dist/head ratio: {{ max_distance_head_ratio }}</li>
       </ul>
     </div>
     <div class="param-box">
-      <h4>Cost Benchmarks</h4>
+      <h4>Energy Physics</h4>
       <ul>
-        <li>Battery: ${{ battery_cost }}/MWh</li>
-        <li>PSH range: ${{ psh_low }}-${{ psh_high }}/MWh</li>
-        <li>Efficiency: {{ efficiency }}%</li>
+        <li>Round-trip efficiency: {{ efficiency }}%</li>
+        <li>Usable reservoir: {{ usable_volume_pct }}%</li>
+        <li>Power duration: {{ power_duration_hours }} hours</li>
+        <li>Battery CAPEX: ${{ "{:,}".format(battery_capex) }}/MWh</li>
       </ul>
     </div>
+  </div>
+
+  <div class="param-box" style="margin-bottom: 5mm;">
+    <h4>Cost Model (EUR)</h4>
+    <ul style="display: flex; flex-wrap: wrap; gap: 0;">
+      <li style="flex: 1 1 50%; min-width: 45%;">Penstock: EUR {{ "{:,}".format(penstock_per_km) }}/km</li>
+      <li style="flex: 1 1 50%; min-width: 45%;">Upper reservoir: EUR {{ "{:,}".format(upper_res_per_mcm) }}/MCM</li>
+      <li style="flex: 1 1 50%; min-width: 45%;">Lower reservoir: EUR {{ "{:,}".format(lower_res_per_mcm) }}/MCM</li>
+      <li style="flex: 1 1 50%; min-width: 45%;">Powerhouse: EUR {{ "{:,}".format(powerhouse_per_mw) }}/MW</li>
+      <li style="flex: 1 1 50%; min-width: 45%;">Fixed costs: EUR {{ "{:,}".format(fixed_costs) }}</li>
+      <li style="flex: 1 1 50%; min-width: 45%;">Grid: ${{ "{:,}".format(grid_per_km) }}/km</li>
+    </ul>
   </div>
 
   <div class="param-box">
@@ -462,18 +511,20 @@ td.score {
       <th>Head (m)</th>
       <th>Dist (km)</th>
       <th>Energy (MWh)</th>
-      <th>Grid (km)</th>
+      <th>CAPEX/MWh</th>
+      <th>vs Battery</th>
       <th>Score</th>
     </tr>
     {% for pair in pairs %}
     <tr>
       <td>{{ pair.rank }}</td>
-      <td>{{ pair.upper_dam }}</td>
-      <td>{{ pair.lower_dam }}</td>
+      <td>{{ pair.upper_dam[:22] }}{{ '...' if pair.upper_dam|length > 22 else '' }}</td>
+      <td>{{ pair.lower_dam[:22] }}{{ '...' if pair.lower_dam|length > 22 else '' }}</td>
       <td>{{ "{:,}".format(pair.head_m | int) }}</td>
       <td>{{ "%.1f" | format(pair.distance_km) }}</td>
-      <td>{{ "{:,}".format(pair.energy_mwh | int) }}</td>
-      <td>{{ "%.1f" | format(pair.grid_distance_km) if pair.grid_distance_km else 'N/A' }}</td>
+      <td>{{ "{:,}".format(pair.energy_mwh | int) if pair.energy_mwh else 'N/A' }}</td>
+      <td>{{ "$%s" | format("{:,}".format(pair.capex_per_mwh_usd | int)) if pair.capex_per_mwh_usd else 'N/A' }}</td>
+      <td>{{ "%.1f%%" | format(pair.capex_advantage_pct) if pair.capex_advantage_pct is not none else 'N/A' }}</td>
       <td class="score">{{ "%.2f" | format(pair.score) }}</td>
     </tr>
     {% endfor %}
@@ -496,7 +547,8 @@ td.score {
     <div class="pair-metrics">
       <div class="metric"><div class="metric-value">{{ "{:,}".format(pair.head_m | int) }}m</div><div class="metric-label">Head</div></div>
       <div class="metric"><div class="metric-value">{{ "%.1f" | format(pair.distance_km) }}km</div><div class="metric-label">Distance</div></div>
-      <div class="metric"><div class="metric-value">{{ "{:,}".format(pair.energy_mwh | int) }}</div><div class="metric-label">Energy (MWh)</div></div>
+      <div class="metric"><div class="metric-value">{{ "{:,}".format(pair.energy_mwh | int) if pair.energy_mwh else 'N/A' }}</div><div class="metric-label">Energy (MWh)</div></div>
+      <div class="metric"><div class="metric-value">{{ "$%s" | format("{:,}".format(pair.capex_per_mwh_usd | int)) if pair.capex_per_mwh_usd else 'N/A' }}</div><div class="metric-label">CAPEX/MWh</div></div>
       <div class="metric"><div class="metric-value">{{ "%.2f" | format(pair.score) }}</div><div class="metric-label">Score</div></div>
     </div>
     <div class="pair-assessment">{{ pair.assessment }}</div>

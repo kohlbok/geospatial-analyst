@@ -8,8 +8,7 @@ AI-powered geospatial screening tool. Evaluates existing dams for pumped storage
 
 ```
 data/
-  dams.json                        THE input: clean dam registry with coords, elevation, capacity, grid distance
-  dams.xlsx                        Same as Excel for non-technical users
+  *.json, *.xlsx, *.csv            Dam registries. Any number of files, user picks which to use.
   .cache/                          Gitignored: SRTM tiles, raw databases, intermediate files
 
 config/
@@ -22,6 +21,7 @@ plugins/
   psh-screening/
     commands/
       collect-dams.md              Collect dam data for any country from global databases
+      normalize-dams.md            Transform any data file into standard format for screening
       screen-dams.md               Screen collected dams for PSH potential
     skills/
       methodology/SKILL.md         Scoring formulas, energy calculations, process overview
@@ -75,7 +75,7 @@ output/                            Generated results (gitignored)
 
 | Tool | Purpose |
 |------|---------|
-| `load_dam_registry` | Load dams from data/dams.json |
+| `load_dam_registry` | List files in data/, select and load one as active |
 | `generate_pairs` | Brute-force all dam pair combinations |
 | `screen_pairs` | Apply filters, calculate energy/cost, score and rank |
 | `generate_map` | Interactive HTML map with satellite imagery |
@@ -91,16 +91,23 @@ output/                            Generated results (gitignored)
 ## How It Works
 
 - **Skills** are domain knowledge the agent loads: methodology, constraints, data sources
-- **Commands** are workflows the agent executes: `/collect-dams` gathers data, `/screen-dams` screens for PSH potential
+- **Commands** are workflows the agent executes: `/collect-dams` gathers data, `/normalize-dams` transforms it, `/screen-dams` screens for PSH potential
 - **MCP server** is the typed tool interface: every operation is an MCP tool with explicit arguments and structured output
-- **Data** lives in `data/dams.json`, a single clean file the agent reads and the user can edit
+- **Data** lives in `data/` as JSON, xlsx, or CSV files. The agent lists what's there and asks the user which file to work with.
 
 ## Key Rules
 
 1. All configurable parameters live in `config/parameters.json`. Never hardcode thresholds.
-2. Dam data input is `data/dams.json`. All enrichment (elevation, grid distance) gets cached back into this file.
+2. Dam data lives in `data/`. Never hardcode a specific filename. The agent lists available files and asks the user which one to use.
 3. Output goes to `output/`. Keep it minimal: one Excel, one map, one JSON, one KML, one GeoJSON.
 4. Cache files (SRTM tiles, raw databases, intermediates) go in `data/.cache/`, never shown to user.
+5. `parse_tabular` preserves all columns. Mapped columns get standard names, unmapped columns pass through as-is.
+
+## Adding Commands
+
+1. Write the command file at `plugins/psh-screening/commands/{command-name}.md`. This is the source of truth.
+2. Create a symlink so Claude Code can load it as a slash command: `mkdir -p .claude/skills/{command-name} && ln -s ../../../plugins/psh-screening/commands/{command-name}.md .claude/skills/{command-name}/SKILL.md`
+3. Update the architecture section above.
 
 ## Style
 

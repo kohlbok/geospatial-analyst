@@ -1,6 +1,7 @@
-import json
 import logging
 from pathlib import Path
+
+import orjson
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = PROJECT_ROOT / "config" / "parameters.json"
@@ -26,11 +27,22 @@ _active_file = None
 NATURAL_EARTH_URL = "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip"
 
 
+def _resolve(obj):
+    if isinstance(obj, dict):
+        keys = {k for k in obj if k != "_description"}
+        if keys == {"value", "description"}:
+            return _resolve(obj["value"])
+        return {k: _resolve(v) for k, v in obj.items() if k != "_description"}
+    if isinstance(obj, list):
+        return [_resolve(item) for item in obj]
+    return obj
+
+
 def load_config():
     global _config_cache
     if _config_cache is None:
-        with open(CONFIG_PATH) as f:
-            _config_cache = json.load(f)
+        with open(CONFIG_PATH, "rb") as f:
+            _config_cache = _resolve(orjson.loads(f.read()))
     return _config_cache
 
 
@@ -125,27 +137,38 @@ def get_active_file():
     return _active_file
 
 
+def scrub_nan(obj):
+    if isinstance(obj, float) and (obj != obj or obj == float("inf") or obj == float("-inf")):
+        return None
+    if isinstance(obj, dict):
+        return {k: scrub_nan(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [scrub_nan(v) for v in obj]
+    return obj
+
+
+def _default(obj):
+    return str(obj)
+
+
+def safe_dumps(obj, **kwargs):
+    opts = orjson.OPT_NON_STR_KEYS
+    if kwargs.get("indent"):
+        opts |= orjson.OPT_INDENT_2
+    return orjson.dumps(obj, default=_default, option=opts).decode()
+
+
 def _save_json(dams, path):
-    import math
-    cleaned = []
-    for dam in dams:
-        clean = {}
-        for k, v in dam.items():
-            if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
-                clean[k] = None
-            else:
-                clean[k] = v
-        cleaned.append(clean)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w") as f:
-        json.dump(cleaned, f, indent=2)
+    with open(path, "wb") as f:
+        f.write(orjson.dumps(dams, default=_default, option=orjson.OPT_INDENT_2))
 
 
 def load_dams():
     if _active_file is None or not _active_file.exists():
         return None
-    with open(_active_file) as f:
-        return json.load(f)
+    with open(_active_file, "rb") as f:
+        return orjson.loads(f.read())
 
 
 def save_dams(dams):

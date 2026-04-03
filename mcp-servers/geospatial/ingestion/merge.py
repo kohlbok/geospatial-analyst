@@ -36,7 +36,7 @@ def _coord_missing(dam):
 
 def merge_sources(staged_sources, threshold_m=500):
     config = load_config()
-    country_code = config.get("country", "DAM")[:3].upper()
+    country_code = config.get("country_code", config.get("country", "DAM")[:3].upper())
 
     all_records = []
     for source_name, records in staged_sources.items():
@@ -132,8 +132,11 @@ def _cluster_by_proximity(records, threshold_m):
 def _merge_cluster(records):
     names = set()
     sources = set()
+    statuses = set()
+    regions = set()
     lats, lons = [], []
     heights, capacities, areas, elevations = [], [], [], []
+    grid_distances = []
     years = []
     purposes = set()
     rivers, basins = set(), set()
@@ -144,6 +147,14 @@ def _merge_cluster(records):
         name = r.get("name", "")
         if name and str(name).lower() not in ("", "nan", "none", "unknown"):
             names.add(str(name).strip())
+
+        status = r.get("status")
+        if status and str(status).lower() not in ("", "nan", "none"):
+            statuses.add(str(status).strip())
+
+        region = r.get("region")
+        if region and str(region).lower() not in ("", "nan", "none"):
+            regions.add(str(region).strip())
 
         lat = _clean_float(r.get("lat"))
         lon = _clean_float(r.get("lon"))
@@ -163,6 +174,9 @@ def _merge_cluster(records):
         e = _clean_float(r.get("elevation_m"))
         if e is not None:
             elevations.append(e)
+        g = _clean_float(r.get("grid_distance_km"))
+        if g is not None:
+            grid_distances.append(g)
         y = _clean_float(r.get("year_built"))
         if y is not None:
             years.append(int(y))
@@ -180,8 +194,24 @@ def _merge_cluster(records):
         if basin and str(basin).lower() not in ("", "nan", "none"):
             basins.add(str(basin).strip())
 
-    return {
-        "name": "Unnamed",
+    STANDARD_FIELDS = {
+        "name", "alt_names", "lat", "lon", "height_m", "capacity_mcm",
+        "surface_area_km2", "elevation_m", "year_built", "river", "basin",
+        "purpose", "sources", "status", "_source", "source",
+        "region", "grid_distance_km", "nearest_substation", "substation_voltage_kv",
+        "id",
+    }
+
+    extra = {}
+    for r in records:
+        for k, v in r.items():
+            if k in STANDARD_FIELDS or k in extra:
+                continue
+            if v is not None and str(v).lower() not in ("", "nan", "none"):
+                extra[k] = v
+
+    dam = {
+        "name": max(names, key=len) if names else "Unnamed",
         "alt_names": sorted(names) if names else [],
         "lat": float(np.mean(lats)) if lats else None,
         "lon": float(np.mean(lons)) if lons else None,
@@ -189,12 +219,16 @@ def _merge_cluster(records):
         "capacity_mcm": max(capacities) if capacities else None,
         "surface_area_km2": max(areas) if areas else None,
         "elevation_m": float(np.mean(elevations)) if elevations else None,
+        "grid_distance_km": min(grid_distances) if grid_distances else None,
         "year_built": min(years) if years else None,
         "river": sorted(rivers)[0] if rivers else None,
         "basin": sorted(basins)[0] if basins else None,
+        "region": sorted(regions)[0] if regions else None,
         "purpose": sorted(purposes) if purposes else [],
         "sources": sorted(sources),
-        "status": "operational",
+        "status": sorted(statuses)[0] if statuses else None,
     }
+    dam.update(extra)
+    return dam
 
 

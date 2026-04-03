@@ -8,52 +8,135 @@ import simplekml
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
-from ..config import OUTPUT_DIR, load_config
+from ..config import OUTPUT_DIR, load_config, safe_dumps
 
 log = logging.getLogger(__name__)
 
+
 FONT = "Calibri"
-ACCENT_DARK = "1E3A5F"
-ACCENT = "2563EB"
+PRIMARY = "115E59"
+ACCENT = "0D9488"
+ACCENT_LIGHT = "CCFBF1"
 GREEN = "059669"
 AMBER = "D97706"
 RED = "DC2626"
-TEXT = "1A1A1A"
+TEXT = "1F2937"
 MUTED = "6B7280"
-STRIPE = "F0F4FA"
+STRIPE = "F7F7F5"
 WHITE = "FFFFFF"
-BORDER_COLOR = "DAE0E8"
+WARM_GRAY = "F5F5F4"
+BORDER_COLOR = "E5E5E3"
+GROUP_HEADER_BG = "1A7A72"
 
 HEADER_FONT = Font(name=FONT, bold=True, color=WHITE, size=10)
-HEADER_FILL = PatternFill(start_color=ACCENT_DARK, end_color=ACCENT_DARK, fill_type="solid")
-HEADER_BORDER = Border(bottom=Side(style="medium", color=ACCENT))
+HEADER_FILL = PatternFill(start_color=PRIMARY, end_color=PRIMARY, fill_type="solid")
+HEADER_BORDER = Border(
+    bottom=Side(style="thin", color=ACCENT),
+    left=Side(style="hair", color="0E8A82"),
+    right=Side(style="hair", color="0E8A82"),
+)
+GROUP_HEADER_FONT = Font(name=FONT, bold=True, color=WHITE, size=9)
+GROUP_HEADER_FILL = PatternFill(start_color=GROUP_HEADER_BG, end_color=GROUP_HEADER_BG, fill_type="solid")
+GROUP_HEADER_BORDER = Border(
+    bottom=Side(style="thin", color=PRIMARY),
+    left=Side(style="thin", color=PRIMARY),
+    right=Side(style="thin", color=PRIMARY),
+    top=Side(style="thin", color=PRIMARY),
+)
 BODY_FONT = Font(name=FONT, size=10, color=TEXT)
 BODY_BORDER = Border(bottom=Side(style="hair", color=BORDER_COLOR))
 STRIPE_FILL = PatternFill(start_color=STRIPE, end_color=STRIPE, fill_type="solid")
 WHITE_FILL = PatternFill(start_color=WHITE, end_color=WHITE, fill_type="solid")
 
-TITLE_FONT = Font(name=FONT, bold=True, size=18, color=ACCENT_DARK)
+TITLE_FONT = Font(name=FONT, bold=True, size=18, color=PRIMARY)
 SUBTITLE_FONT = Font(name=FONT, size=11, color=MUTED)
-SECTION_FONT = Font(name=FONT, bold=True, size=11, color=ACCENT_DARK)
+SECTION_FONT = Font(name=FONT, bold=True, size=11, color=PRIMARY)
 LABEL_FONT = Font(name=FONT, size=10, color=MUTED)
 VALUE_FONT = Font(name=FONT, bold=True, size=10, color=TEXT)
-STAT_VALUE_FONT = Font(name=FONT, bold=True, size=22, color=ACCENT_DARK)
+STAT_VALUE_FONT = Font(name=FONT, bold=True, size=22, color=PRIMARY)
 STAT_LABEL_FONT = Font(name=FONT, size=9, color=MUTED)
 
-DAM_COLUMNS = [
-    ("id", "ID", 14, "left"),
-    ("name", "Dam Name", 32, "left"),
-    ("lat", "Latitude", 12, "right"),
-    ("lon", "Longitude", 12, "right"),
-    ("elevation_m", "Elevation (m)", 15, "right"),
-    ("height_m", "Height (m)", 13, "right"),
-    ("capacity_mcm", "Capacity (MCM)", 16, "right"),
-    ("surface_area_km2", "Area (km\u00b2)", 13, "right"),
-    ("year_built", "Year Built", 12, "center"),
-    ("river", "River", 22, "left"),
-    ("grid_distance_km", "Grid Distance (km)", 18, "right"),
-    ("nearest_substation", "Nearest Substation", 36, "left"),
+DAM_COLUMN_ORDER = [
+    "id", "name", "status", "region", "lat", "lon", "elevation_m",
+    "height_m", "capacity_mcm", "grid_distance_km", "year_built", "purpose",
 ]
+
+DAM_COLUMN_LABELS = {
+    "id": "ID",
+    "name": "Dam Name",
+    "status": "Status",
+    "region": "Region",
+    "lat": "Latitude",
+    "lon": "Longitude",
+    "elevation_m": "Elevation (m)",
+    "height_m": "Height (m)",
+    "capacity_mcm": "Capacity (MCM)",
+    "surface_area_km2": "Area (km²)",
+    "grid_distance_km": "Grid Distance (km)",
+    "nearest_substation": "Nearest Substation",
+    "year_built": "Year Built",
+    "purpose": "Purpose",
+    "river": "River",
+    "basin": "Basin",
+    "sources": "Sources",
+    "alt_names": "Alt Names",
+    "fill_rate_pct": "Fill Rate (%)",
+    "hv_line_km": "HV Line (km)",
+    "capacity_source": "Capacity Source",
+    "review_category": "Review Category",
+    "visual_verdict": "Visual Verdict",
+    "visual_notes": "Visual Notes",
+    "raw_name": "Raw Name",
+    "elev_cop90_m": "Elev. COP90 (m)",
+    "elev_delta_m": "Elev. Delta (m)",
+    "elev_flag": "Elev. Flag",
+    "source_count": "Source Count",
+    "coord_spread_m": "Coord Spread (m)",
+    "needs_review": "Needs Review",
+    "substation_voltage_kv": "Substation Voltage (kV)",
+}
+
+DAM_COLUMN_WIDTHS = {
+    "id": 12, "name": 32, "status": 16, "region": 28, "lat": 12, "lon": 12,
+    "elevation_m": 14, "height_m": 12, "capacity_mcm": 15, "grid_distance_km": 17,
+    "year_built": 12, "purpose": 18, "river": 20, "basin": 20, "sources": 18,
+    "alt_names": 30, "visual_notes": 50, "visual_verdict": 28, "review_category": 18,
+    "raw_name": 24, "nearest_substation": 30, "needs_review": 30,
+}
+
+NUMERIC_COLUMNS = {
+    "lat", "lon", "elevation_m", "height_m", "capacity_mcm", "surface_area_km2",
+    "grid_distance_km", "year_built", "fill_rate_pct", "hv_line_km",
+    "elev_cop90_m", "elev_delta_m", "coord_spread_m", "source_count",
+    "substation_voltage_kv",
+}
+
+HIDDEN_COLUMNS = {"alt_names", "satellite_view", "ceb_flag"}
+
+DAM_COLUMN_GROUPS = [
+    ("IDENTITY", {"id", "name", "status"}),
+    ("LOCATION", {"region", "lat", "lon", "elevation_m"}),
+    ("RESERVOIR", {"height_m", "capacity_mcm", "surface_area_km2", "fill_rate_pct"}),
+    ("GRID", {"grid_distance_km", "hv_line_km", "nearest_substation", "substation_voltage_kv"}),
+    ("METADATA", {"year_built", "purpose", "river", "basin", "sources", "alt_names", "raw_name", "capacity_source"}),
+    ("DATA QUALITY", {"review_category", "visual_verdict", "visual_notes", "elev_cop90_m", "elev_delta_m", "elev_flag", "source_count", "coord_spread_m", "needs_review"}),
+]
+
+
+def _build_dam_col_defs(columns):
+    ordered = [c for c in DAM_COLUMN_ORDER if c in columns and c not in HIDDEN_COLUMNS]
+    rest = [c for c in columns if c not in ordered and c not in HIDDEN_COLUMNS]
+    all_cols = ordered + rest
+
+    defs = []
+    for col in all_cols:
+        label = DAM_COLUMN_LABELS.get(col, col.replace("_", " ").title())
+        width = DAM_COLUMN_WIDTHS.get(col, max(len(label) + 4, 14))
+        align = "right" if col in NUMERIC_COLUMNS else "left"
+        if col in ("year_built", "status", "id"):
+            align = "center"
+        defs.append((col, label, width, align))
+    return defs
 
 PAIR_COLUMNS = [
     ("rank", "Rank", 8, "center"),
@@ -64,8 +147,9 @@ PAIR_COLUMNS = [
     ("distance_head_ratio", "Dist/Head Ratio", 15, "right"),
     ("energy_mwh_standard", "Energy (MWh)", 15, "right"),
     ("composite_score", "Score", 10, "center"),
-    ("psh_cost_usd_per_mwh", "PSH Cost ($/MWh)", 17, "right"),
-    ("cost_advantage_pct", "Cost Advantage", 15, "right"),
+    ("data_quality", "Data Quality", 14, "center"),
+    ("capex_per_mwh_usd", "CAPEX ($/MWh)", 17, "right"),
+    ("capex_advantage_pct", "CAPEX Advantage", 15, "right"),
     ("lcoe_eur_per_mwh", "LCOE (EUR/MWh)", 16, "right"),
     ("tunneling_cost_eur", "Tunneling (EUR)", 17, "right"),
     ("grid_connection_cost_eur", "Grid Connect (EUR)", 17, "right"),
@@ -75,21 +159,26 @@ PAIR_COLUMNS = [
 ]
 
 NUMBER_FORMATS = {
-    "lat": "0.000",
-    "lon": "0.000",
+    "lat": "0.000000",
+    "lon": "0.000000",
     "elevation_m": "#,##0",
     "height_m": "0.0",
-    "capacity_mcm": "#,##0",
+    "capacity_mcm": "#,##0.0",
     "surface_area_km2": "0.0",
     "year_built": "0",
     "grid_distance_km": "0.0",
+    "fill_rate_pct": "0.0",
+    "hv_line_km": "0.0",
+    "elev_cop90_m": "0.0",
+    "elev_delta_m": "0.0",
+    "coord_spread_m": "0.0",
     "head_m": "#,##0",
     "distance_km": "0.0",
     "distance_head_ratio": "0.0",
     "energy_mwh_standard": "#,##0",
     "composite_score": "0.000",
-    "psh_cost_usd_per_mwh": "$#,##0",
-    "cost_advantage_pct": "0.0%",
+    "capex_per_mwh_usd": "$#,##0",
+    "capex_advantage_pct": "0.0%",
     "lcoe_eur_per_mwh": "#,##0",
     "tunneling_cost_eur": "#,##0",
     "grid_connection_cost_eur": "#,##0",
@@ -109,17 +198,69 @@ def generate_clean_outputs(dam_registry, scored_pairs):
     return paths
 
 
-def _style_data_sheet(ws, col_defs, score_col=None):
+def _build_group_spans(col_defs):
+    col_keys = [k for k, l, w, a in col_defs]
+    group_membership = {}
+    for group_name, group_cols in DAM_COLUMN_GROUPS:
+        for col in group_cols:
+            group_membership[col] = group_name
+
+    spans = []
+    current_group = None
+    start_idx = None
+
+    for i, key in enumerate(col_keys):
+        group = group_membership.get(key, "OTHER")
+        if group != current_group:
+            if current_group is not None:
+                spans.append((current_group, start_idx, i - 1))
+            current_group = group
+            start_idx = i
+        if i == len(col_keys) - 1:
+            spans.append((current_group, start_idx, i))
+
+    return spans
+
+
+def _add_grouped_header_row(ws, col_defs):
+    ws.insert_rows(1)
+    spans = _build_group_spans(col_defs)
+
+    for group_name, start_idx, end_idx in spans:
+        start_col = start_idx + 1
+        end_col = end_idx + 1
+        if start_col != end_col:
+            ws.merge_cells(
+                start_row=1, start_column=start_col,
+                end_row=1, end_column=end_col,
+            )
+        cell = ws.cell(row=1, column=start_col, value=group_name)
+        cell.font = GROUP_HEADER_FONT
+        cell.fill = GROUP_HEADER_FILL
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = GROUP_HEADER_BORDER
+        for col_idx in range(start_col + 1, end_col + 1):
+            c = ws.cell(row=1, column=col_idx)
+            c.fill = GROUP_HEADER_FILL
+            c.border = GROUP_HEADER_BORDER
+
+    ws.row_dimensions[1].height = 24
+
+
+def _style_data_sheet(ws, col_defs, score_col=None, grouped_header=False):
+    header_row = 2 if grouped_header else 1
+    data_start_row = header_row + 1
+
     col_aligns = {i: align for i, (key, label, width, align) in enumerate(col_defs, 1)}
 
-    for col_idx, cell in enumerate(ws[1], 1):
+    for col_idx, cell in enumerate(ws[header_row], 1):
         cell.font = HEADER_FONT
         cell.fill = HEADER_FILL
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border = HEADER_BORDER
-    ws.row_dimensions[1].height = 36
+    ws.row_dimensions[header_row].height = 36
 
-    for row_idx, row in enumerate(ws.iter_rows(min_row=2), 2):
+    for row_idx, row in enumerate(ws.iter_rows(min_row=data_start_row), data_start_row):
         fill = STRIPE_FILL if row_idx % 2 == 0 else WHITE_FILL
         for col_idx, cell in enumerate(row, 1):
             cell.font = BODY_FONT
@@ -134,10 +275,10 @@ def _style_data_sheet(ws, col_defs, score_col=None):
         ws.column_dimensions[col_letter].width = width
         fmt = NUMBER_FORMATS.get(key)
         if fmt:
-            for row_idx in range(2, ws.max_row + 1):
+            for row_idx in range(data_start_row, ws.max_row + 1):
                 cell = ws.cell(row=row_idx, column=i)
                 if cell.value is not None:
-                    if key == "cost_advantage_pct":
+                    if key == "capex_advantage_pct":
                         try:
                             cell.value = float(cell.value) / 100
                         except (ValueError, TypeError):
@@ -145,7 +286,7 @@ def _style_data_sheet(ws, col_defs, score_col=None):
                     cell.number_format = fmt
 
     if score_col:
-        for row_idx in range(2, ws.max_row + 1):
+        for row_idx in range(data_start_row, ws.max_row + 1):
             cell = ws.cell(row=row_idx, column=score_col)
             if cell.value is None:
                 continue
@@ -160,8 +301,20 @@ def _style_data_sheet(ws, col_defs, score_col=None):
             else:
                 cell.font = Font(name=FONT, size=10, bold=True, color=RED)
 
-    ws.auto_filter.ref = ws.dimensions
-    ws.freeze_panes = "A2"
+    dq_col = next((i for i, (k, l, w, a) in enumerate(col_defs, 1) if k == "data_quality"), None)
+    if dq_col:
+        for row_idx in range(data_start_row, ws.max_row + 1):
+            cell = ws.cell(row=row_idx, column=dq_col)
+            v = str(cell.value).lower() if cell.value else ""
+            if v == "complete":
+                cell.font = Font(name=FONT, size=10, bold=True, color=GREEN)
+            elif v == "partial":
+                cell.font = Font(name=FONT, size=10, bold=True, color=AMBER)
+            elif v == "missing":
+                cell.font = Font(name=FONT, size=10, bold=True, color=RED)
+
+    ws.auto_filter.ref = f"A{header_row}:{get_column_letter(ws.max_column)}{ws.max_row}"
+    ws.freeze_panes = f"A{data_start_row}"
 
 
 def _build_summary_sheet(wb, dam_registry, scored_pairs):
@@ -183,18 +336,24 @@ def _build_summary_sheet(wb, dam_registry, scored_pairs):
     ws.column_dimensions["F"].width = 22
     ws.column_dimensions["G"].width = 18
 
-    row = 2
+    accent_fill = PatternFill(start_color=ACCENT, end_color=ACCENT, fill_type="solid")
+    row = 1
+    for col in range(1, 8):
+        ws.cell(row=row, column=col).fill = accent_fill
+    ws.row_dimensions[row].height = 4
+
+    row = 3
     ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=7)
     c = ws.cell(row=row, column=2, value=f"PSH Screening Results: {country}")
     c.font = TITLE_FONT
     c.alignment = Alignment(vertical="center")
 
-    row = 3
+    row = 4
     ws.merge_cells(start_row=row, start_column=2, end_row=row, end_column=7)
     c = ws.cell(row=row, column=2, value=f"Generated {datetime.now().strftime('%B %d, %Y')}")
     c.font = SUBTITLE_FONT
 
-    row = 5
+    row = 6
     stats = [
         (str(total_dams), "Dams Evaluated"),
         (f"{total_pairs:,}", "Pairs Generated"),
@@ -202,41 +361,63 @@ def _build_summary_sheet(wb, dam_registry, scored_pairs):
         (f"{top_energy:,.0f}", "Top Energy (MWh)"),
     ]
     stat_cols = [2, 3, 4, 5]
+
+    stat_bg = PatternFill(start_color=ACCENT_LIGHT, end_color=ACCENT_LIGHT, fill_type="solid")
+    stat_border = Border(
+        top=Side(style="thin", color=ACCENT),
+        bottom=Side(style="thin", color=ACCENT),
+        left=Side(style="thin", color=ACCENT),
+        right=Side(style="thin", color=ACCENT),
+    )
     for i, (value, label) in enumerate(stats):
         col = stat_cols[i]
         c = ws.cell(row=row, column=col, value=value)
         c.font = STAT_VALUE_FONT
+        c.fill = stat_bg
+        c.border = stat_border
         c.alignment = Alignment(horizontal="center")
         c = ws.cell(row=row + 1, column=col, value=label)
         c.font = STAT_LABEL_FONT
+        c.fill = stat_bg
+        c.border = stat_border
         c.alignment = Alignment(horizontal="center")
     ws.row_dimensions[row].height = 34
     ws.row_dimensions[row + 1].height = 18
 
-    row = 8
+    row = 9
     divider_fill = PatternFill(start_color=BORDER_COLOR, end_color=BORDER_COLOR, fill_type="solid")
     for col in range(2, 8):
         ws.cell(row=row, column=col).fill = divider_fill
     ws.row_dimensions[row].height = 2
 
-    row = 10
-    ws.cell(row=row, column=2, value="Screening Parameters").font = SECTION_FONT
-    ws.cell(row=row, column=5, value="Cost Benchmarks").font = SECTION_FONT
+    row = 11
+    ws.cell(row=row, column=2, value="Filters & Physics").font = SECTION_FONT
+    ws.cell(row=row, column=5, value="Cost Model").font = SECTION_FONT
     row += 1
+    ph = config.get("physics", {})
+    cm = config.get("cost_model", {})
+    cb = config.get("cost_benchmarks", {})
     left_params = [
         ("Minimum head", f"{config['filters']['min_head_m']} m"),
         ("Maximum distance", f"{config['filters']['max_distance_km']} km"),
         ("Max dist/head ratio", f"{config['filters'].get('max_distance_head_ratio', 50)}"),
         ("Minimum capacity", f"{config['filters']['min_capacity_mcm']} MCM"),
-        ("Round-trip efficiency", f"{int(config['physics']['round_trip_efficiency'] * 100)}%"),
+        ("Round-trip efficiency", f"{int(ph.get('round_trip_efficiency', 0.78) * 100)}%"),
+        ("Usable reservoir", f"{int(ph.get('usable_volume_fraction', 0.6) * 100)}%"),
+        ("Power duration", f"{ph.get('power_duration_hours', 8)} hours"),
+        ("Battery CAPEX", f"${cb.get('battery_capex_usd_per_mwh', 100_000):,.0f}/MWh"),
+        ("Battery LCOE (ref)", f"${cb.get('battery_usd_per_mwh', 300)}/MWh"),
     ]
-    cm = config.get("cost_model", {})
     right_params = [
-        ("Battery storage", f"${config['cost_benchmarks']['battery_usd_per_mwh']}/MWh"),
-        ("PSH low estimate", f"${config['cost_benchmarks']['psh_usd_per_mwh_low']}/MWh"),
-        ("PSH high estimate", f"${config['cost_benchmarks']['psh_usd_per_mwh_high']}/MWh"),
-        ("Tunneling cost", f"EUR {cm.get('tunneling_eur_per_km', 6_500_000):,.0f}/km"),
+        ("Penstock", f"EUR {cm.get('penstock_eur_per_km', 43_000_000):,.0f}/km"),
+        ("Upper reservoir", f"EUR {cm.get('reservoir_upper_eur_per_mcm', 14_000_000):,.0f}/MCM"),
+        ("Lower reservoir", f"EUR {cm.get('reservoir_lower_eur_per_mcm', 36_000_000):,.0f}/MCM"),
+        ("Powerhouse", f"EUR {cm.get('powerhouse_eur_per_mw', 490_000):,.0f}/MW"),
+        ("Tunneling", f"EUR {cm.get('tunneling_eur_per_km', 6_500_000):,.0f}/km"),
+        ("Fixed costs", f"EUR {cm.get('fixed_costs_eur', 42_000_000):,.0f}"),
         ("Grid connection", f"${cm.get('grid_connection_usd_per_km', 1_000_000):,.0f}/km"),
+        ("Depreciation", f"{cm.get('depreciation_years', 40)} years"),
+        ("Annual cycles", f"{cm.get('annual_cycles', 300)}"),
     ]
     for i, (label, value) in enumerate(left_params):
         ws.cell(row=row + i, column=2, value=label).font = LABEL_FONT
@@ -266,7 +447,6 @@ def _build_summary_sheet(wb, dam_registry, scored_pairs):
 
     top5_headers = ["Rank", "Upper Dam", "Lower Dam", "Head (m)", "Energy (MWh)", "Score"]
     top5_aligns = ["center", "left", "left", "right", "right", "center"]
-    top5_widths_needed = [8, 22, 22, 13, 15, 10]
     for i, header in enumerate(top5_headers):
         col = 2 + i
         c = ws.cell(row=row, column=col, value=header)
@@ -279,12 +459,12 @@ def _build_summary_sheet(wb, dam_registry, scored_pairs):
 
     for _, pair in scored_pairs.head(5).iterrows():
         values = [
-            int(pair.get("rank", 0)),
+            int(pair.get("rank") or 0),
             pair.get("upper_dam_name", ""),
             pair.get("lower_dam_name", ""),
-            pair.get("head_m", 0),
-            pair.get("energy_mwh_standard", 0),
-            pair.get("composite_score", 0),
+            pair.get("head_m") or 0,
+            pair.get("energy_mwh_standard") or 0,
+            pair.get("composite_score") or 0,
         ]
         fmts = ["0", None, None, "#,##0", "#,##0", "0.000"]
         for i, (val, fmt) in enumerate(zip(values, fmts)):
@@ -322,9 +502,9 @@ def _build_summary_sheet(wb, dam_registry, scored_pairs):
     row += 1
     methodology = (
         "All dam pairs within the configured distance and head thresholds were evaluated. "
-        "Each viable pair was scored on energy potential, cost competitiveness vs battery storage, "
-        "grid proximity, and reservoir suitability. The composite score (0-1) ranks pairs by "
-        "overall PSH viability."
+        "Each viable pair was scored on energy potential (40%), cost competitiveness vs battery "
+        "storage CAPEX (35%), and grid proximity (25%). The composite score (0-1) ranks pairs "
+        "by overall PSH viability."
     )
     ws.merge_cells(start_row=row, start_column=2, end_row=row + 2, end_column=7)
     c = ws.cell(row=row, column=2, value=methodology)
@@ -339,11 +519,14 @@ def _build_summary_sheet(wb, dam_registry, scored_pairs):
 def _export_excel(dam_registry, scored_pairs):
     output_path = OUTPUT_DIR / "results.xlsx"
 
-    dam_col_defs = [(k, l, w, a) for k, l, w, a in DAM_COLUMNS if k in dam_registry.columns]
+    dam_col_defs = _build_dam_col_defs(dam_registry.columns.tolist())
     pair_col_defs = [(k, l, w, a) for k, l, w, a in PAIR_COLUMNS if k in scored_pairs.columns]
 
     with pd.ExcelWriter(str(output_path), engine="openpyxl") as writer:
         dam_df = dam_registry[[k for k, l, w, a in dam_col_defs]].copy()
+        for col in dam_df.columns:
+            if col in ("purpose", "alt_names", "sources"):
+                dam_df[col] = dam_df[col].apply(lambda v: ", ".join(v) if isinstance(v, list) else v)
         dam_df.columns = [l for k, l, w, a in dam_col_defs]
         dam_df.to_excel(writer, sheet_name="Dam Registry", index=False)
 
@@ -373,36 +556,25 @@ def _export_excel(dam_registry, scored_pairs):
 
 def _export_json(dam_registry, scored_pairs):
     output_path = OUTPUT_DIR / "results.json"
+    dam_list = []
+    for _, row in dam_registry.iterrows():
+        dam_list.append(row.to_dict())
+
     pairs_list = []
     for _, row in scored_pairs.iterrows():
-        entry = {
-            "rank": int(row.get("rank", 0)),
-            "upper_dam": row.get("upper_dam_name"),
-            "lower_dam": row.get("lower_dam_name"),
-            "head_m": round(row.get("head_m", 0)),
-            "distance_km": round(row.get("distance_km", 0), 1),
-            "distance_head_ratio": row.get("distance_head_ratio"),
-            "energy_mwh_standard": round(row.get("energy_mwh_standard", 0)),
-            "composite_score": round(row.get("composite_score", 0), 4),
-            "psh_cost_usd_per_mwh": row.get("psh_cost_usd_per_mwh"),
-            "cost_advantage_pct": row.get("cost_advantage_pct"),
-            "lcoe_eur_per_mwh": row.get("lcoe_eur_per_mwh"),
-            "tunneling_cost_eur": row.get("tunneling_cost_eur"),
-            "grid_connection_cost_eur": row.get("grid_connection_cost_eur"),
-            "grid_distance_km": row.get("grid_distance_km"),
-        }
-        pairs_list.append(entry)
+        pairs_list.append(row.to_dict())
 
     result = {
         "generated": datetime.now().isoformat(),
         "config": load_config(),
         "total_dams": len(dam_registry),
         "total_pairs_scored": len(scored_pairs),
+        "dams": dam_list,
         "pairs": pairs_list,
     }
 
     with open(output_path, "w") as f:
-        json.dump(result, f, indent=2, default=str)
+        f.write(safe_dumps(result, indent=2))
     log.info(f"Saved JSON to {output_path}")
     return str(output_path)
 
@@ -413,13 +585,14 @@ def _export_3d_kml(dam_registry, scored_pairs):
     kml = simplekml.Kml(name="PSH Screening - Top Pairs 3D")
 
     for _, pair in scored_pairs.head(20).iterrows():
-        rank = int(pair.get("rank", 0))
+        pair = pair.to_dict()
+        rank = int(pair.get("rank") or 0)
         upper_name = pair.get("upper_dam_name", "?")
         lower_name = pair.get("lower_dam_name", "?")
-        head = pair.get("head_m", 0)
-        dist = pair.get("distance_km", 0)
-        energy = pair.get("energy_mwh_standard", 0)
-        score = pair.get("composite_score", 0)
+        head = pair.get("head_m") or 0
+        dist = pair.get("distance_km") or 0
+        energy = pair.get("energy_mwh_standard") or 0
+        score = pair.get("composite_score") or 0
 
         folder = kml.newfolder(name=f"#{rank}: {upper_name} - {lower_name}")
         folder.description = f"Head: {head:.0f}m | Distance: {dist:.1f}km | Energy: {energy:,.0f} MWh | Score: {score:.3f}"
@@ -481,14 +654,14 @@ def _export_geojson(dam_registry, scored_pairs):
                 ],
             },
             "properties": {
-                "rank": int(pair.get("rank", 0)),
+                "rank": int(pair.get("rank") or 0),
                 "upper_dam": pair.get("upper_dam_name"),
                 "lower_dam": pair.get("lower_dam_name"),
-                "head_m": round(pair.get("head_m", 0)),
-                "distance_km": round(pair.get("distance_km", 0), 1),
+                "head_m": pair.get("head_m"),
+                "distance_km": pair.get("distance_km"),
                 "distance_head_ratio": pair.get("distance_head_ratio"),
-                "energy_mwh": round(pair.get("energy_mwh_standard", 0)),
-                "score": round(pair.get("composite_score", 0), 3),
+                "energy_mwh": pair.get("energy_mwh_standard"),
+                "score": pair.get("composite_score"),
                 "lcoe_eur_per_mwh": pair.get("lcoe_eur_per_mwh"),
             },
         })
@@ -496,7 +669,7 @@ def _export_geojson(dam_registry, scored_pairs):
     geojson = {"type": "FeatureCollection", "features": features}
     geojson_path = OUTPUT_DIR / "pairs.geojson"
     with open(geojson_path, "w") as f:
-        json.dump(geojson, f, indent=2)
+        f.write(safe_dumps(geojson, indent=2))
     log.info(f"Saved GeoJSON to {geojson_path}")
     return str(geojson_path)
 

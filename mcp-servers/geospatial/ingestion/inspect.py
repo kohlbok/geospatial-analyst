@@ -70,18 +70,30 @@ def _inspect_excel(path, max_rows):
     sheets = xls.sheet_names
     result = {"sheets": sheets}
 
-    df = pd.read_excel(path, sheet_name=0, nrows=max_rows + 5)
+    raw = pd.read_excel(path, sheet_name=0, header=None, nrows=30)
 
-    if len(df) > 0 and df.iloc[0].astype(str).str.contains("name|dam|country|lat|height|capacity", case=False).any():
-        header_row = 0
-        actual_df = df.iloc[1:max_rows + 1].reset_index(drop=True)
-        actual_df.columns = df.iloc[0].astype(str).tolist()
-    else:
-        actual_df = df.head(max_rows)
+    header_row = _find_header_row(raw)
+    result["header_row"] = header_row
 
-    total_df = pd.read_excel(path, sheet_name=0)
-    result.update(_df_summary(actual_df, len(total_df)))
+    df = pd.read_excel(path, sheet_name=0, header=header_row)
+    df = df.dropna(how="all")
+    df = df.loc[:, df.columns.notna()]
+
+    result.update(_df_summary(df.head(max_rows), len(df)))
     return result
+
+
+def _find_header_row(raw):
+    keywords = {"name", "dam", "lat", "lon", "height", "capacity", "id", "status", "region", "country", "longitude", "latitude"}
+    best_row = 0
+    best_score = 0
+    for i in range(min(20, len(raw))):
+        row_vals = [str(v).strip().lower() for v in raw.iloc[i] if pd.notna(v)]
+        score = sum(1 for v in row_vals if any(kw in v for kw in keywords))
+        if score > best_score:
+            best_score = score
+            best_row = i
+    return best_row
 
 
 def _inspect_shapefile(path, max_rows):

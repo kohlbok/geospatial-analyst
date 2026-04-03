@@ -1,49 +1,77 @@
 {
-  "country": "Morocco",
-  "bbox": [27.0, 36.0, -13.0, -1.0],
+  "country": {"value": "Morocco", "description": "Target country for screening. Used to load country boundary and label outputs."},
+  "country_code": {"value": "MAR", "description": "ISO 3166-1 alpha-3 code. Used as prefix for dam IDs (e.g. MAR-001)."},
+  "bbox": {"value": [27.0, 36.0, -13.0, -1.0], "description": "Bounding box [lat_min, lat_max, lon_min, lon_max]. Fallback if country boundary can't be loaded. Used to clip OSM queries and protected area lookups."},
 
   "filters": {
-    "min_head_m": 100,
-    "max_distance_km": 40,
-    "min_capacity_mcm": 1.5,
-    "max_distance_head_ratio": 50
+    "_description": "Hard cutoffs applied to every dam pair before scoring. Pairs that fail any filter are excluded from ranking. Adjust these to widen or narrow the candidate pool.",
+    "min_head_m": {"value": 100, "description": "Minimum elevation difference between upper and lower dam (meters). Below this, energy output is too low to justify tunnel and penstock infrastructure. Feeds into: pair screening pass/fail."},
+    "max_distance_km": {"value": 40, "description": "Maximum straight-line distance between dams (km). Beyond this, penstock/tunnel costs dominate and make the project uneconomic. Feeds into: pair screening pass/fail."},
+    "min_capacity_mcm": {"value": 1.5, "description": "Minimum reservoir capacity in million cubic meters. Both dams in a pair must meet this threshold. Small reservoirs can't store enough water for meaningful energy storage. Feeds into: pair screening pass/fail."},
+    "max_distance_head_ratio": {"value": 50, "description": "Maximum ratio of distance (m) to head (m). High ratios mean long tunnels for little elevation gain, which is uneconomic. A ratio of 50 means 5km distance per 100m of head. Feeds into: pair screening pass/fail."}
   },
 
   "screening": {
-    "protected_area_buffer_km": 1,
-    "max_tunnel_length_km": 10
+    "_description": "Additional screening parameters beyond the core filters.",
+    "protected_area_buffer_km": {"value": 1, "description": "Buffer distance (km) around the line connecting two dams. If this buffer intersects a protected area, the pair is flagged. Feeds into: tier 2 filtering."},
+    "max_tunnel_length_km": {"value": 10, "description": "Maximum feasible tunnel length (km) for terrain profile analysis. Feeds into: terrain profile assessment."}
   },
 
   "scoring_weights": {
-    "energy_potential": 0.35,
-    "cost_advantage": 0.30,
-    "proximity_to_grid": 0.20,
-    "reservoir_quality": 0.15
+    "_description": "Weights for the composite score (must sum to 1.0). The composite score ranks all viable pairs from 0 (worst) to 1 (best). Each sub-score is normalized 0-1 across all viable pairs, then multiplied by its weight.",
+    "energy_potential": {"value": 0.40, "description": "Weight for energy storage capacity (head x volume x efficiency). The core physics metric. Higher weight favors pairs that can store more energy per cycle."},
+    "cost_advantage": {"value": 0.35, "description": "Weight for cost competitiveness vs battery storage (CAPEX/MWh vs battery benchmark). Higher weight favors pairs where the build cost per MWh of storage beats batteries."},
+    "proximity_to_grid": {"value": 0.25, "description": "Weight for distance to nearest high-voltage substation. The only metric independent of reservoir size. Higher weight favors pairs close to existing grid, reducing interconnection cost."}
   },
 
   "cost_benchmarks": {
-    "battery_usd_per_mwh": 300,
-    "psh_usd_per_mwh_low": 150,
-    "psh_usd_per_mwh_high": 250
+    "_description": "Reference costs for comparing PSH against battery storage. The battery CAPEX benchmark is the primary comparison metric used in scoring.",
+    "battery_capex_usd_per_mwh": {"value": 100000, "description": "Battery storage capital cost per MWh of storage capacity (USD). This is the benchmark that PSH pairs are compared against. A pair with lower CAPEX/MWh than this is considered cost-competitive. Feeds into: capex_advantage_pct scoring."},
+    "battery_usd_per_mwh": {"value": 300, "description": "Battery LCOE reference (USD/MWh dispatched). Informational only, shown in reports for context. Not used in scoring."},
+    "psh_usd_per_mwh_low": {"value": 150, "description": "PSH LCOE lower bound (USD/MWh) for high-head sites. Informational only, shown in executive summary for context. Not used in scoring."},
+    "psh_usd_per_mwh_high": {"value": 250, "description": "PSH LCOE upper bound (USD/MWh) for low-head sites. Informational only, shown in executive summary for context. Not used in scoring."}
   },
 
   "cost_model": {
-    "penstock_eur_per_km": 43000000,
-    "reservoir_upper_eur_per_mcm": 14000000,
-    "reservoir_lower_eur_per_mcm": 36000000,
-    "powerhouse_eur_per_mw": 490000,
-    "fixed_costs_eur": 42000000,
-    "grid_connection_usd_per_km": 1000000,
-    "depreciation_years": 40,
-    "annual_cycles": 300,
-    "eur_to_usd": 1.08
+    "_description": "Component costs for calculating total PSH project CAPEX. Total CAPEX = penstock + upper reservoir + lower reservoir + powerhouse + tunneling + grid connection + fixed costs. CAPEX per MWh = total CAPEX / energy capacity. This is the main cost metric used for scoring.",
+    "penstock_eur_per_km": {"value": 43000000, "description": "Penstock (pressure pipe) cost per km of straight-line distance between dams (EUR). Major cost driver for distant pairs. Feeds into: total CAPEX calculation."},
+    "reservoir_upper_eur_per_mcm": {"value": 14000000, "description": "Upper reservoir preparation cost per million cubic meters (EUR). Lower than lower reservoir because upper dams often need less modification. Feeds into: total CAPEX calculation."},
+    "reservoir_lower_eur_per_mcm": {"value": 36000000, "description": "Lower reservoir preparation cost per million cubic meters (EUR). Higher because lower reservoirs typically need more civil works. Feeds into: total CAPEX calculation."},
+    "powerhouse_eur_per_mw": {"value": 490000, "description": "Powerhouse and turbine cost per MW of installed capacity (EUR). Scales with the power rating of the facility. Feeds into: total CAPEX calculation."},
+    "fixed_costs_eur": {"value": 42000000, "description": "Fixed project costs independent of site characteristics (EUR). Covers engineering, permitting, access roads, environmental studies. Feeds into: total CAPEX calculation."},
+    "grid_connection_usd_per_km": {"value": 1000000, "description": "Grid interconnection cost per km to nearest HV substation (USD). Converted to EUR using eur_to_usd rate. Feeds into: total CAPEX calculation."},
+    "tunneling_eur_per_km": {"value": 6500000, "description": "Tunnel boring cost per km (EUR). Applied when terrain profile analysis identifies tunnel segments. Feeds into: total CAPEX calculation."},
+    "depreciation_years": {"value": 40, "description": "Project lifetime for LCOE calculation (years). PSH plants typically last 40-80 years. Feeds into: LCOE = total CAPEX / (energy_per_cycle x annual_cycles x years)."},
+    "annual_cycles": {"value": 300, "description": "Number of charge/discharge cycles per year. Typical for a daily-cycling PSH plant (roughly 300 working days). Feeds into: LCOE calculation."},
+    "eur_to_usd": {"value": 1.08, "description": "EUR to USD exchange rate. Used to convert between currencies in cost calculations."}
   },
 
   "physics": {
-    "round_trip_efficiency": 0.78
+    "_description": "Physical constants and assumptions for energy calculations. Energy (MWh) = head x volume x density x gravity x efficiency / 3,600,000,000.",
+    "round_trip_efficiency": {"value": 0.78, "description": "Round-trip energy efficiency (0-1). Accounts for losses in pumping up and generating down. 0.78 means 22% energy loss per cycle. Feeds into: energy_mwh calculation."},
+    "water_density_kg_m3": {"value": 1000, "description": "Density of water (kg/m3). Standard value. Feeds into: energy_mwh calculation."},
+    "gravity_m_s2": {"value": 9.81, "description": "Gravitational acceleration (m/s2). Standard value. Feeds into: energy_mwh calculation."},
+    "usable_volume_fraction": {"value": 0.6, "description": "Fraction of reservoir capacity assumed usable for pumped storage (0-1). 0.6 means 60% of total volume is available for cycling. Accounts for minimum operating levels, sediment, and competing water uses. Feeds into: energy_mwh calculation."},
+    "power_duration_hours": {"value": 8, "description": "Hours of continuous power output at rated capacity. Used to derive MW from MWh: power_mw = energy_mwh / duration_hours. 8 hours is standard for grid-scale storage."}
   },
 
   "ingestion": {
-    "proximity_threshold_m": 500
+    "_description": "Parameters for data collection and deduplication.",
+    "proximity_threshold_m": {"value": 500, "description": "Distance threshold (meters) for merging dam records from different sources. Dams within this distance are considered duplicates and merged. Feeds into: merge_sources deduplication."}
+  },
+
+  "grid": {
+    "_description": "Parameters for looking up the nearest high-voltage substation from OpenStreetMap.",
+    "min_voltage_kv": {"value": 60, "description": "Minimum substation voltage to consider (kV). Only substations at or above this voltage are included. 60kV covers high-voltage transmission. Feeds into: grid distance enrichment."},
+    "search_radius_km": {"value": 50, "description": "Initial search radius for OSM Overpass queries (km). If no substation is found within this radius, the search expands. Feeds into: grid distance enrichment."},
+    "max_distance_km": {"value": 200, "description": "Maximum search radius (km). Dams with no substation within this distance get null grid_distance. Feeds into: grid distance enrichment."},
+    "name_match_radius_km": {"value": 5, "description": "Radius (km) for matching substation names to dams. Used when trying to find named substations near specific dams. Feeds into: grid distance enrichment."},
+    "osm_name_tags": {"value": ["name", "name:fr", "name:ar"], "description": "OSM tags to check for substation names. Checks French and Arabic names for Morocco. Adjust for other countries. Feeds into: grid distance enrichment."}
+  },
+
+  "elevation": {
+    "_description": "Parameters for SRTM elevation data enrichment and validation.",
+    "neighbor_offset_degrees": {"value": 0.005, "description": "Offset in degrees (~500m) for sampling neighboring elevation points around each dam. Used to validate elevation readings. Feeds into: elevation enrichment."},
+    "discrepancy_warning_m": {"value": 20, "description": "Threshold (meters) for flagging elevation discrepancies between SRTM and other sources. Dams with deltas above this get a warning flag. Feeds into: elevation quality assessment."}
   }
 }

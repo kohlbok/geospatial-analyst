@@ -24,8 +24,8 @@ energy_mwh = head_m * usable_volume_m3 * water_density * gravity * efficiency / 
 
 where:
   head_m          = elevation difference between upper and lower dam (meters)
-  usable_volume   = min(upper_capacity, lower_capacity) * fill_fraction (m3)
-  fill_fraction   = 0.60 (standard), 0.30 (conservative), 0.90 (optimistic)
+  usable_volume   = min(upper_capacity, lower_capacity) * usable_volume_fraction (m3)
+  usable_volume_fraction = 0.60 (from config, accounts for min operating levels and competing uses)
   water_density   = 1000 kg/m3
   gravity         = 9.81 m/s2
   efficiency      = 0.78 (round-trip, from config)
@@ -63,7 +63,7 @@ Raw value:
 ```
 grid_distance_km = distance from nearest dam in the pair to nearest HV substation (>=60kV)
 
-Looked up from OpenStreetMap Overpass API, cached in dams.json.
+Looked up from OpenStreetMap Overpass API, cached in the active data file.
 For a pair, grid_distance = min(upper_dam_grid_distance, lower_dam_grid_distance)
 ```
 
@@ -96,7 +96,7 @@ Pairs that fail are not eliminated from the output, they just get filtered befor
 
 ## Process
 
-1. Load dam registry from data/dams.json
+1. Load dam registry from the active data file
 2. Generate all n*(n-1)/2 pair combinations (brute force)
 3. Apply screening filters
 4. Calculate energy, cost, grid, reservoir scores for viable pairs

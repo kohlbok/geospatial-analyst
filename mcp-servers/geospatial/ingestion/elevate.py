@@ -147,6 +147,10 @@ def predownload_tiles(country_code=None):
 
 
 def enrich_dam_elevations(dam_registry):
+    from ..config import load_config
+    config = load_config()
+    elev_cfg = config.get("elevation", {})
+
     log.info(f"Enriching {len(dam_registry)} dams with SRTM elevation data")
     predownload_tiles()
 
@@ -166,7 +170,7 @@ def enrich_dam_elevations(dam_registry):
         wall_elev = get_elevation(lat, lon)
         wall_elevations.append(wall_elev)
 
-        offset = 0.005
+        offset = elev_cfg.get("neighbor_offset_degrees", 0.005)
         neighbors = [
             get_elevation(lat + offset, lon),
             get_elevation(lat - offset, lon),
@@ -181,7 +185,8 @@ def enrich_dam_elevations(dam_registry):
         if wall_elev is not None and db_elev is not None:
             delta = abs(wall_elev - db_elev)
             crosscheck_deltas.append(delta)
-            if delta > 20:
+            discrepancy_threshold = elev_cfg.get("discrepancy_warning_m", 20)
+            if delta > discrepancy_threshold:
                 log.warning(
                     f"Elevation discrepancy for {dam['name']}: "
                     f"SRTM={wall_elev}m, DB={db_elev}m, delta={delta}m"

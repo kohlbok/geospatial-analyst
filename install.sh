@@ -65,17 +65,20 @@ packages = [
     ('geopandas', 'geopandas'),
     ('rasterio', 'rasterio'),
     ('shapely', 'shapely'),
-    ('fiona', 'fiona'),
+    ('pyogrio', 'pyogrio'),
     ('folium', 'folium'),
     ('pandas', 'pandas'),
     ('numpy', 'numpy'),
     ('openpyxl', 'openpyxl'),
     ('simplekml', 'simplekml'),
+    ('orjson', 'orjson'),
     ('requests', 'requests'),
     ('matplotlib', 'matplotlib'),
     ('fastmcp', 'fastmcp'),
     ('overpy', 'overpy'),
     ('jinja2', 'jinja2'),
+]
+optional = [
     ('weasyprint', 'weasyprint'),
 ]
 for name, module in packages:
@@ -84,6 +87,13 @@ for name, module in packages:
     except ImportError as e:
         failures.append(f'{name}: {e}')
 
+warnings = []
+for name, module in optional:
+    try:
+        __import__(module)
+    except ImportError:
+        warnings.append(name)
+
 if failures:
     print('Import failures:')
     for f in failures:
@@ -91,6 +101,8 @@ if failures:
     sys.exit(1)
 else:
     print(f'All {len(packages)} packages import successfully')
+    if warnings:
+        print('Optional (PDF export): ' + ', '.join(warnings) + ' not available')
 "
 success "All imports verified"
 
@@ -119,6 +131,6 @@ header "Setup complete"
 echo ""
 echo "  To screen dams:"
 echo "    1. Open Claude Code: claude"
-echo "    2. Drop your dam data into data/dams.xlsx"
-echo "    3. Run /screen-dams"
+echo "    2. Drop your data files into data/"
+echo "    3. Run /normalize-dams then /screen-dams"
 echo ""

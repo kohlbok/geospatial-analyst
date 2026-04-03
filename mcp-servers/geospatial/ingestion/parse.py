@@ -37,7 +37,9 @@ def parse_tabular(path, column_mapping, filters=None, output_name="parsed"):
     if not column_mapping:
         return {"error": "column_mapping is required"}
 
-    records = _apply_mapping(df, column_mapping)
+    from ..config import scrub_nan
+
+    records = scrub_nan(_apply_mapping(df, column_mapping))
 
     STAGING_DIR.mkdir(parents=True, exist_ok=True)
     out_path = STAGING_DIR / f"{output_name}.json"
@@ -69,11 +71,12 @@ def _read_file(path, fmt):
                 except UnicodeDecodeError:
                     continue
         elif fmt in ("xlsx", "xls"):
-            df = pd.read_excel(path, sheet_name=0)
-            if len(df) > 0 and df.iloc[0].astype(str).str.contains("name|dam|country|lat", case=False).any():
-                new_cols = df.iloc[0].astype(str).tolist()
-                df = df.iloc[1:].reset_index(drop=True)
-                df.columns = new_cols
+            from .inspect import _find_header_row
+            raw = pd.read_excel(path, sheet_name=0, header=None, nrows=30)
+            header_row = _find_header_row(raw)
+            df = pd.read_excel(path, sheet_name=0, header=header_row)
+            df = df.dropna(how="all")
+            df = df.loc[:, df.columns.notna()]
             return df
         elif fmt == "shapefile":
             import geopandas as gpd
@@ -154,7 +157,19 @@ def _apply_filters(df, filters):
     return df
 
 
+NUMERIC_FIELDS = {
+    "lat", "lon", "height_m", "capacity_mcm", "surface_area_km2",
+    "elevation_m", "depth_m", "shore_len_km", "catchment_km2",
+    "grid_distance_km", "fill_rate_pct",
+}
+
+INT_FIELDS = {"year_built"}
+
+
 def _apply_mapping(df, column_mapping):
+    mapped_src_cols = set(column_mapping.keys())
+    unmapped_cols = [c for c in df.columns if c not in mapped_src_cols]
+
     records = []
     for _, row in df.iterrows():
         record = {}
@@ -165,18 +180,39 @@ def _apply_mapping(df, column_mapping):
             val = row[src_col]
             if pd.isna(val):
                 record[dst_field] = None
-            elif dst_field in ("lat", "lon", "height_m", "capacity_mcm", "surface_area_km2",
-                               "elevation_m", "depth_m", "shore_len_km", "catchment_km2"):
+            elif dst_field in NUMERIC_FIELDS:
                 try:
                     record[dst_field] = float(val)
                 except (ValueError, TypeError):
                     record[dst_field] = None
-            elif dst_field in ("year_built",):
+            elif dst_field in INT_FIELDS:
                 try:
                     record[dst_field] = int(float(val))
                 except (ValueError, TypeError):
                     record[dst_field] = None
             else:
                 record[dst_field] = str(val).strip()
+
+        for col in unmapped_cols:
+            val = row[col]
+            if pd.isna(val):
+                continue
+            key = _clean_key(col)
+            if not key:
+                continue
+            if isinstance(val, float) and val == int(val):
+                record[key] = int(val)
+            else:
+                record[key] = val
+
         records.append(record)
     return records
+
+
+def _clean_key(col_name):
+    import re
+    s = str(col_name).strip()
+    s = re.sub(r'[()/%]', '', s)
+    s = re.sub(r'[^a-zA-Z0-9_]', '_', s)
+    s = re.sub(r'_+', '_', s).strip('_').lower()
+    return s

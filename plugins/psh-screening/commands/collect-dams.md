@@ -68,7 +68,7 @@ If there are edge cases (records without coordinates that couldn't be merged):
 
 Present them to the user with name, source, height, capacity. Review each one:
 - Can you identify which existing water body this matches? (by capacity, river)
-- If yes, note it as a match (the agent can update dams.json directly)
+- If yes, note it as a match (the agent can update the active data file directly)
 - If no match found, note it as unmatched
 
 ### Step 9: Enrich
@@ -79,13 +79,11 @@ Call `enrich_grid_distance` MCP tool to add nearest power substation distance. R
 
 ### Step 10: Output
 
-Save the final registry:
-- `data/dams.json` (already saved, now fully enriched)
-- `data/dams.xlsx` (create Excel version for non-technical users)
+The final registry has already been saved by the merge and enrichment steps. Report the output path and final stats:
 
-Report final stats:
 ```
 Collection complete for [country].
+  Output: [path to saved file]
   Total water bodies: X
   Named from OSM: A (B%)
   With elevation: C (D%)
@@ -93,5 +91,5 @@ Collection complete for [country].
   With capacity: G (H%)
   With grid distance: I (J%)
 
-Run /screen-dams to start screening.
+Ready for /screen-dams.
 ```
