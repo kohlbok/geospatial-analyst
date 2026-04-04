@@ -107,18 +107,31 @@ def _cluster_by_proximity(records, threshold_m):
     lats = np.array([float(r["lat"]) for r in records])
     lons = np.array([float(r["lon"]) for r in records])
 
-    degree_threshold = threshold_m / 111_000
-
     for i in range(n):
         if i % 500 == 0 and i > 0:
             log.info(f"Clustering progress: {i}/{n}")
         for j in range(i + 1, n):
-            if abs(lats[i] - lats[j]) > degree_threshold:
+            if abs(lats[i] - lats[j]) > 0.15:
                 continue
-            if abs(lons[i] - lons[j]) > degree_threshold:
+            if abs(lons[i] - lons[j]) > 0.15:
                 continue
+
             dist = haversine_m(lats[i], lons[i], lats[j], lons[j])
+
             if dist <= threshold_m:
+                union(i, j)
+                continue
+
+            area_i = _clean_float(records[i].get("surface_area_km2"))
+            area_j = _clean_float(records[j].get("surface_area_km2"))
+            areas_match = (
+                area_i and area_j and area_i > 0 and area_j > 0
+                and abs(area_i - area_j) / max(area_i, area_j) <= 0.15
+            )
+
+            if dist <= threshold_m * 3 and areas_match:
+                union(i, j)
+            elif dist <= 8000 and areas_match:
                 union(i, j)
 
     groups = {}
@@ -136,13 +149,15 @@ def _merge_cluster(records):
     regions = set()
     lats, lons = [], []
     heights, capacities, areas, elevations = [], [], [], []
+    source_heights, source_capacities = {}, {}
     grid_distances = []
     years = []
     purposes = set()
     rivers, basins = set(), set()
 
     for r in records:
-        sources.add(r.get("_source", r.get("source", "")))
+        src = r.get("_source", r.get("source", ""))
+        sources.add(src)
 
         name = r.get("name", "")
         if name and str(name).lower() not in ("", "nan", "none", "unknown"):
@@ -165,9 +180,13 @@ def _merge_cluster(records):
         h = _clean_float(r.get("height_m"))
         if h is not None:
             heights.append(h)
+            if src not in source_heights or h > source_heights[src]:
+                source_heights[src] = h
         c = _clean_float(r.get("capacity_mcm"))
         if c is not None:
             capacities.append(c)
+            if src not in source_capacities or c > source_capacities[src]:
+                source_capacities[src] = c
         a = _clean_float(r.get("surface_area_km2"))
         if a is not None:
             areas.append(a)
@@ -194,12 +213,38 @@ def _merge_cluster(records):
         if basin and str(basin).lower() not in ("", "nan", "none"):
             basins.add(str(basin).strip())
 
+    coord_spread_m = None
+    if len(lats) > 1:
+        max_dist = max(
+            haversine_m(lats[i], lons[i], lats[j], lons[j])
+            for i in range(len(lats)) for j in range(i + 1, len(lats))
+        )
+        coord_spread_m = round(max_dist, 0)
+
+    conflicts = []
+    if coord_spread_m is not None and coord_spread_m > 1000:
+        conflicts.append(f"coord_spread:{coord_spread_m:.0f}m")
+    if len(source_heights) > 1:
+        hvals = list(source_heights.values())
+        if max(hvals) - min(hvals) > 10:
+            conflicts.append(f"height:{min(hvals):.0f}-{max(hvals):.0f}m")
+    if len(source_capacities) > 1:
+        cvals = list(source_capacities.values())
+        if max(cvals) > 0 and (max(cvals) - min(cvals)) / max(cvals) > 0.2:
+            conflicts.append(f"capacity:{min(cvals):.0f}-{max(cvals):.0f}MCM")
+
+    non_hydrolakes = sources - {"hydrolakes"}
+    if not non_hydrolakes and not heights:
+        feature_type = "natural_reservoir"
+    else:
+        feature_type = "dam"
+
     STANDARD_FIELDS = {
         "name", "alt_names", "lat", "lon", "height_m", "capacity_mcm",
         "surface_area_km2", "elevation_m", "year_built", "river", "basin",
         "purpose", "sources", "status", "_source", "source",
         "region", "grid_distance_km", "nearest_substation", "substation_voltage_kv",
-        "id",
+        "id", "coord_spread_m", "source_count", "needs_review", "feature_type",
     }
 
     extra = {}
@@ -226,9 +271,11 @@ def _merge_cluster(records):
         "region": sorted(regions)[0] if regions else None,
         "purpose": sorted(purposes) if purposes else [],
         "sources": sorted(sources),
+        "source_count": len(sources),
         "status": sorted(statuses)[0] if statuses else None,
+        "feature_type": feature_type,
+        "coord_spread_m": coord_spread_m,
+        "needs_review": "; ".join(conflicts) if conflicts else None,
     }
     dam.update(extra)
     return dam
-
-

@@ -1,4 +1,6 @@
 data/.cache/
+data/raw/staging/
+data/overview.html
 output/
 __pycache__/
 *.pyc

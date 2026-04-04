@@ -28,17 +28,20 @@ plugins/
       constraints/SKILL.md         Engineering filter thresholds
       data-sources/SKILL.md        Global and country-specific dam databases
       data-collection-workflow/    How to collect and merge dam data for any country
+      visual-review/SKILL.md       Decision tree and methodology for satellite visual review
 
 mcp-servers/
   geospatial/
-    server.py                      FastMCP server: 12 MCP tools
+    server.py                      FastMCP server: 16 MCP tools
     config.py                      Paths, config loading
     geo.py                         Haversine distance calculations
     ingestion/                     Data collection and enrichment
       download.py                  Generic file download utilities
-      merge.py                     Proximity-based dam deduplication (Union-Find clustering)
+      merge.py                     Tiered proximity + surface area deduplication (Union-Find)
       elevate.py                   SRTM 30m elevation enrichment
-      osm.py                       OpenStreetMap grid distance lookup
+      osm.py                       OpenStreetMap grid distance and name lookup
+      geocode.py                   Multi-strategy geocoder for dams without coordinates
+      under_construction.py        WikiData + OSM under-construction dam fetcher
       inspect.py                   Generic file inspection (CSV, Excel, Shapefile)
       parse.py                     Generic tabular parsing with column mapping
       staging.py                   Staging area for agent-driven data collection
@@ -52,7 +55,7 @@ mcp-servers/
     terrain/
       profiles.py                  SRTM elevation profiles between dam pairs
     visualization/
-      maps.py                      Interactive Folium map with satellite imagery
+      maps.py                      Interactive Folium maps (screening results + overview)
       export.py                    Excel (styled), JSON, 3D KML, GeoJSON output
       terrain_viz.py               Terrain profile charts
 
@@ -79,11 +82,15 @@ output/                            Generated results (gitignored)
 | `generate_pairs` | Brute-force all dam pair combinations |
 | `screen_pairs` | Apply filters, calculate energy/cost, score and rank |
 | `generate_map` | Interactive HTML map with satellite imagery |
+| `generate_overview_map` | Overview map of all dams color-coded by status (for visual review during collection) |
 | `generate_results` | Excel, JSON, 3D KML, GeoJSON exports |
 | `generate_executive_summary` | PDF report with expert pair assessments |
-| `merge_sources` | Merge all staged dam sources by coordinate proximity |
+| `merge_sources` | Merge all staged dam sources by tiered coordinate proximity and surface area matching |
+| `enrich_names` | Canonical names from OpenStreetMap water features |
 | `enrich_grid_distance` | Look up nearest HV substation per dam (OpenStreetMap) |
 | `enrich_elevation` | Add SRTM 30m elevation data |
+| `enrich_coordinates` | Geocode dams without coordinates (OSM, Nominatim) |
+| `fetch_under_construction` | Fetch under-construction dams from WikiData and OSM |
 | `download_file` | Download any URL to cache |
 | `inspect_file` | Inspect any tabular file (columns, sample rows) |
 | `parse_tabular` | Parse file with agent-provided column mapping |

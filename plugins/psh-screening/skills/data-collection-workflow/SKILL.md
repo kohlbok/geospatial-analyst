@@ -22,6 +22,53 @@ Every source gets mapped to this schema before staging:
 | purpose | list[string] | - | no |
 | elevation_m | float | meters above sea level | no |
 | source | string | source identifier | auto |
+| id | string | {country_code}-{NNN} | auto |
+| status | string | dam classification | no |
+| raw_name | string | original name before corrections | no |
+| source_count | int | number of sources contributing | auto |
+| coord_confidence | string | exact/approximate/estimated | no |
+| capacity_source | string | origin of capacity value | no |
+| needs_review | string | free-text review notes | no |
+
+## ID Assignment
+
+After merging, assign each dam a structured ID: `{country_code}-{NNN}` (e.g. MAR-001, MAR-002). The country code comes from `config/parameters.json`. IDs are sequential, starting at 001. This makes dams easy to reference during review and in reports.
+
+## Visual Review Fields
+
+These fields are set during the visual review step (after enrichment, before final output). They are optional but significantly improve data quality.
+
+### Status
+
+Classification of the dam/water body. Drives the overview map color coding and determines what enters screening.
+
+| Value | Meaning | Enters screening? |
+|-------|---------|-------------------|
+| Operational Dam | Confirmed existing dam | Yes |
+| Under Construction | Dam being built, not yet operational | Yes |
+| Natural Reservoir | Water body without a dam wall (lake, lagoon) | Yes (may be viable as-is) |
+| Existing PSH | Already operating as pumped storage | No (already developed) |
+| Removed | False positive, duplicate, or wrong country | No |
+
+### Coordinate Confidence
+
+Set during visual review by checking the dam against satellite imagery:
+- **exact**: Dam structure clearly visible at the coordinates
+- **approximate**: Structure visible but coordinates are slightly off (within ~500m)
+- **estimated**: No structure visible, location from textual description or coarse source only
+
+### needs_review
+
+Free-text notes field for flagging issues. Common patterns:
+- `coord_spread:XXXm` -- sources disagree on location by XXX meters
+- `possible_duplicate_of_{ID}` -- may be the same dam as another record
+- `capacity:X-YMCM` -- capacity uncertain, range estimate
+- `coord_fixed_from_visual_review` -- coordinates were corrected based on satellite imagery
+- `name_conflict` -- sources give different names
+
+### Removed Dams
+
+Dams with `status: Removed` stay in the dataset but are excluded from screening. The `needs_review` field records the removal reason (e.g. "duplicate of MAR-009", "fishpond not dam", "coordinates in ocean", "wrong country"). Keeping removed dams prevents re-adding them in future collection runs.
 
 ## Step-by-Step Workflow
 

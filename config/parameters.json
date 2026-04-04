@@ -73,5 +73,20 @@
     "_description": "Parameters for SRTM elevation data enrichment and validation.",
     "neighbor_offset_degrees": {"value": 0.005, "description": "Offset in degrees (~500m) for sampling neighboring elevation points around each dam. Used to validate elevation readings. Feeds into: elevation enrichment."},
     "discrepancy_warning_m": {"value": 20, "description": "Threshold (meters) for flagging elevation discrepancies between SRTM and other sources. Dams with deltas above this get a warning flag. Feeds into: elevation quality assessment."}
+  },
+
+  "overview_map": {
+    "_description": "Status-to-color mapping for the overview map generated during data collection. Used by generate_overview_map tool.",
+    "status_colors": {
+      "value": {
+        "operational_dam": "#1a6bcc",
+        "under_construction": "#E6960C",
+        "natural_reservoir": "#2e8b57",
+        "existing_psh": "#8B008B",
+        "removed": "#888888",
+        "unknown": "#666666"
+      },
+      "description": "Map of normalized status to hex color. Dam status is lowercased and spaces replaced with underscores before lookup. Add new statuses as needed."
+    }
   }
 }

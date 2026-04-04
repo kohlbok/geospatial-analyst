@@ -152,6 +152,20 @@ def generate_map() -> str:
 
 
 @mcp.tool()
+def generate_overview_map() -> str:
+    """Generate an interactive overview map of all dams color-coded by status. Used during data collection for visual review. Saves to data/overview.html."""
+    import pandas as pd
+    from geospatial.visualization.maps import generate_overview_map as do_generate
+
+    dams = load_dams()
+    if dams is None:
+        return safe_dumps({"error": "No data file selected. Call load_dam_registry first."})
+
+    map_path = do_generate(pd.DataFrame(dams))
+    return safe_dumps({"status": "ok", "map": str(map_path)})
+
+
+@mcp.tool()
 def generate_results() -> str:
     """Generate final output files: results.xlsx, results.json, pairs.kml, pairs.geojson."""
     import pandas as pd
@@ -405,6 +419,47 @@ def enrich_elevation() -> str:
         "status": "ok",
         "total_dams": len(enriched),
         "elevation_coverage": f"{len(enriched) - missing}/{len(enriched)}",
+    })
+
+
+@mcp.tool()
+def enrich_coordinates() -> str:
+    """Geocode dams that have no coordinates using OSM name search, nearby city lookup, and Nominatim fallback."""
+    from geospatial.ingestion.geocode import geocode_unlocated
+
+    dams = load_dams()
+    if dams is None:
+        return safe_dumps({"error": "No data file selected. Call load_dam_registry first."})
+
+    enriched, found = geocode_unlocated(dams)
+    save_dams(enriched)
+
+    still_missing = sum(1 for d in enriched if d.get("lat") is None)
+    return safe_dumps({
+        "status": "ok",
+        "total_dams": len(enriched),
+        "geocoded": found,
+        "still_missing_coords": still_missing,
+    })
+
+
+@mcp.tool()
+def fetch_under_construction() -> str:
+    """Fetch under-construction dams from WikiData and OpenStreetMap. Returns records that can be added to staged sources."""
+    from geospatial.ingestion.under_construction import fetch_all_under_construction
+
+    records = fetch_all_under_construction()
+    if not records:
+        return safe_dumps({"status": "ok", "count": 0, "message": "No under-construction dams found"})
+
+    from geospatial.ingestion.staging import save_staged_source
+    result = save_staged_source("under_construction", records)
+
+    return safe_dumps({
+        "status": "ok",
+        "count": len(records),
+        "staged": result,
+        "sample": records[:3],
     })
 
 

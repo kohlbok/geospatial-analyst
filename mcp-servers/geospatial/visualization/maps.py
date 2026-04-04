@@ -2,10 +2,10 @@ import logging
 
 import pandas as pd
 import folium
-from folium.plugins import MarkerCluster
+from folium.plugins import MarkerCluster, Search
 import branca.colormap as cm
 
-from ..config import OUTPUT_DIR
+from ..config import OUTPUT_DIR, DATA_DIR, load_config
 
 log = logging.getLogger(__name__)
 
@@ -146,4 +146,127 @@ def _pair_popup(pair):
         ("Score", f"{pair.get('composite_score', 0):.3f}"),
     ]
     rows = "".join(f"<tr><td><b>{k}</b></td><td>{v}</td></tr>" for k, v in fields)
+    return f"<table style='font-size:12px'>{rows}</table>"
+
+
+def generate_overview_map(dam_registry):
+    config = load_config()
+    status_colors = config.get("overview_map", {}).get("status_colors", {})
+    default_color = status_colors.get("unknown", "#666666")
+
+    center_lat = dam_registry["lat"].dropna().mean()
+    center_lon = dam_registry["lon"].dropna().mean()
+
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=6, tiles=None)
+
+    folium.TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        attr="Esri", name="Satellite",
+    ).add_to(m)
+    folium.TileLayer(
+        tiles="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+        attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        name="Street Map", subdomains="abcd",
+    ).add_to(m)
+    folium.TileLayer(
+        tiles="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+        attr="CARTO", name="Labels", subdomains="abcd", overlay=True,
+    ).add_to(m)
+
+    def _normalize_status(s):
+        if not s or pd.isna(s):
+            return "unknown"
+        return str(s).strip().lower().replace(" ", "_")
+
+    dam_registry = dam_registry.copy()
+    dam_registry["_status_key"] = dam_registry.get("status", pd.Series(dtype=str)).apply(_normalize_status)
+
+    present_statuses = sorted(dam_registry["_status_key"].unique())
+    layers = {}
+    for status_key in present_statuses:
+        label = status_key.replace("_", " ").title()
+        layers[status_key] = folium.FeatureGroup(name=label)
+
+    search_layer = folium.FeatureGroup(name="__search", show=False)
+    search_features = []
+
+    for _, dam in dam_registry.iterrows():
+        lat, lon = dam.get("lat"), dam.get("lon")
+        if lat is None or pd.isna(lat) or pd.isna(lon):
+            continue
+
+        status_key = dam["_status_key"]
+        color = status_colors.get(status_key, default_color)
+
+        popup_html = _overview_popup(dam)
+        name = dam.get("name", "")
+        dam_id = dam.get("id", "")
+        tooltip = f"{name} ({dam_id})" if dam_id else name
+
+        folium.CircleMarker(
+            location=[lat, lon], radius=7,
+            color=color, fill=True, fill_color=color, fill_opacity=0.7,
+            popup=folium.Popup(popup_html, max_width=320),
+            tooltip=tooltip,
+        ).add_to(layers[status_key])
+
+        search_features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": {"name": name, "id": dam_id},
+        })
+
+    for layer in layers.values():
+        layer.add_to(m)
+
+    if search_features:
+        geojson = folium.GeoJson(
+            {"type": "FeatureCollection", "features": search_features},
+            name="__search", show=False,
+            style_function=lambda _: {"opacity": 0, "fillOpacity": 0},
+        )
+        geojson.add_to(search_layer)
+        search_layer.add_to(m)
+        Search(layer=geojson, search_label="name", placeholder="Search dams...", collapsed=False).add_to(m)
+
+    legend_items = "".join(
+        f'<p><span style="color:{status_colors.get(s, default_color)}">&#9679;</span> {s.replace("_", " ").title()}</p>'
+        for s in present_statuses if s != "unknown"
+    )
+    legend_html = (
+        '<div style="position:fixed;bottom:50px;left:50px;z-index:1000;background:white;'
+        'padding:10px;border:2px solid grey;border-radius:5px">'
+        f'<h4>Legend</h4>{legend_items}</div>'
+    )
+    m.get_root().html.add_child(folium.Element(legend_html))
+
+    folium.LayerControl().add_to(m)
+
+    output_path = DATA_DIR / "overview.html"
+    m.save(str(output_path))
+    log.info(f"Saved overview map to {output_path}")
+    return str(output_path)
+
+
+def _overview_popup(dam):
+    lat, lon = dam.get("lat", ""), dam.get("lon", "")
+    sat_link = f'<a href="https://www.google.com/maps/@{lat},{lon},15z/data=!3m1!1e3" target="_blank">View satellite</a>' if lat and lon else ""
+
+    sources = dam.get("sources", "")
+    if isinstance(sources, list):
+        sources = ", ".join(str(s) for s in sources)
+
+    fields = [
+        ("ID", dam.get("id", "")),
+        ("Name", dam.get("name", "")),
+        ("Status", dam.get("status", "")),
+        ("Elevation", f"{dam.get('elevation_m', dam.get('elevation_wall_m', 'N/A'))}m"),
+        ("Height", f"{dam.get('height_m', 'N/A')}m"),
+        ("Capacity", f"{dam.get('capacity_mcm', 'N/A')} MCM"),
+        ("Area", f"{dam.get('surface_area_km2', 'N/A')} km2"),
+        ("Year", dam.get("year_built", "N/A")),
+        ("Sources", sources),
+        ("Location", sat_link),
+    ]
+    rows = "".join(f"<tr><td><b>{k}</b></td><td>{v}</td></tr>" for k, v in fields if str(v) not in ("N/A", "None", "nan", "", "N/Am", "N/A km2"))
     return f"<table style='font-size:12px'>{rows}</table>"
