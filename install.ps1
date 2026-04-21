@@ -69,6 +69,9 @@ packages = [
     ('folium', 'folium'),
     ('pandas', 'pandas'),
     ('numpy', 'numpy'),
+    ('scipy', 'scipy'),
+    ('scikit-image', 'skimage'),
+    ('scikit-learn', 'sklearn'),
     ('openpyxl', 'openpyxl'),
     ('simplekml', 'simplekml'),
     ('orjson', 'orjson'),
@@ -135,8 +138,11 @@ Success ".mcp.json configured"
 # ---------- Summary ----------
 Header "Setup complete"
 Write-Host ""
-Write-Host "  To screen dams:"
+Write-Host "  Workflow:"
 Write-Host "    1. Open Claude Code: claude"
 Write-Host "    2. Drop your data files into data/"
-Write-Host "    3. Run /normalize-dams then /screen-dams"
+Write-Host "    3. /collect-dams [country]   (optional, scrapes global databases)"
+Write-Host "    4. /normalize-dams           (standardize columns into the screening schema)"
+Write-Host "    5. /screen-dams              (find pairs between existing dams)"
+Write-Host "    6. /scan-terrain             (find new reservoir sites for greenfield siting)"
 Write-Host ""

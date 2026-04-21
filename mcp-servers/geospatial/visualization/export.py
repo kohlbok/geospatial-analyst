@@ -146,13 +146,16 @@ PAIR_COLUMNS = [
     ("distance_km", "Distance (km)", 14, "right"),
     ("distance_head_ratio", "Dist/Head Ratio", 15, "right"),
     ("energy_mwh_standard", "Energy (MWh)", 15, "right"),
+    ("energy_mwh_variable_fill", "Energy - Variable Fill (MWh)", 24, "right"),
+    ("upper_fill_rate_pct", "Upper Fill Rate (%)", 17, "right"),
+    ("lower_fill_rate_pct", "Lower Fill Rate (%)", 17, "right"),
     ("composite_score", "Score", 10, "center"),
     ("data_quality", "Data Quality", 14, "center"),
     ("capex_per_mwh_usd", "CAPEX ($/MWh)", 17, "right"),
     ("capex_advantage_pct", "CAPEX Advantage", 15, "right"),
-    ("lcoe_eur_per_mwh", "LCOE (EUR/MWh)", 16, "right"),
-    ("tunneling_cost_eur", "Tunneling (EUR)", 17, "right"),
-    ("grid_connection_cost_eur", "Grid Connect (EUR)", 17, "right"),
+    ("lcoe_usd_per_mwh", "LCOE ($/MWh)", 16, "right"),
+    ("tunneling_cost_usd", "Tunneling ($)", 17, "right"),
+    ("substation_cost_usd", "Substation ($)", 17, "right"),
     ("grid_distance_km", "Grid Distance (km)", 17, "right"),
     ("upper_capacity_mcm", "Upper Capacity (MCM)", 19, "right"),
     ("lower_capacity_mcm", "Lower Capacity (MCM)", 19, "right"),
@@ -176,21 +179,24 @@ NUMBER_FORMATS = {
     "distance_km": "0.0",
     "distance_head_ratio": "0.0",
     "energy_mwh_standard": "#,##0",
+    "energy_mwh_variable_fill": "#,##0",
+    "upper_fill_rate_pct": "0.0",
+    "lower_fill_rate_pct": "0.0",
     "composite_score": "0.000",
     "capex_per_mwh_usd": "$#,##0",
     "capex_advantage_pct": "0.0%",
-    "lcoe_eur_per_mwh": "#,##0",
-    "tunneling_cost_eur": "#,##0",
-    "grid_connection_cost_eur": "#,##0",
+    "lcoe_usd_per_mwh": "$#,##0",
+    "tunneling_cost_usd": "$#,##0",
+    "substation_cost_usd": "$#,##0",
     "upper_capacity_mcm": "#,##0",
     "lower_capacity_mcm": "#,##0",
     "rank": "0",
 }
 
 
-def generate_clean_outputs(dam_registry, scored_pairs):
+def generate_clean_outputs(dam_registry, scored_pairs, all_pairs=None):
     paths = {}
-    paths["excel"] = _export_excel(dam_registry, scored_pairs)
+    paths["excel"] = _export_excel(dam_registry, scored_pairs, all_pairs)
     paths["json"] = _export_json(dam_registry, scored_pairs)
     paths["kml_3d"] = _export_3d_kml(dam_registry, scored_pairs)
     paths["geojson"] = _export_geojson(dam_registry, scored_pairs)
@@ -409,13 +415,13 @@ def _build_summary_sheet(wb, dam_registry, scored_pairs):
         ("Battery LCOE (ref)", f"${cb.get('battery_usd_per_mwh', 300)}/MWh"),
     ]
     right_params = [
-        ("Penstock", f"EUR {cm.get('penstock_eur_per_km', 43_000_000):,.0f}/km"),
-        ("Upper reservoir", f"EUR {cm.get('reservoir_upper_eur_per_mcm', 14_000_000):,.0f}/MCM"),
-        ("Lower reservoir", f"EUR {cm.get('reservoir_lower_eur_per_mcm', 36_000_000):,.0f}/MCM"),
-        ("Powerhouse", f"EUR {cm.get('powerhouse_eur_per_mw', 490_000):,.0f}/MW"),
-        ("Tunneling", f"EUR {cm.get('tunneling_eur_per_km', 6_500_000):,.0f}/km"),
-        ("Fixed costs", f"EUR {cm.get('fixed_costs_eur', 42_000_000):,.0f}"),
-        ("Grid connection", f"${cm.get('grid_connection_usd_per_km', 1_000_000):,.0f}/km"),
+        ("Penstock", f"${cm.get('penstock_usd_per_km', 46_960_000):,.0f}/km"),
+        ("Upper reservoir", f"${cm.get('reservoir_upper_usd_per_mcm', 15_230_000):,.0f}/MCM"),
+        ("Lower reservoir", f"${cm.get('reservoir_lower_usd_per_mcm', 38_770_000):,.0f}/MCM"),
+        ("Powerhouse", f"${cm.get('powerhouse_usd_per_mw', 467_967):,.0f}/MW"),
+        ("Substation", f"${cm.get('substation_usd_per_mw', 92_565):,.0f}/MW"),
+        ("Roads (fixed)", f"${cm.get('roads_usd_fixed', 10_800_000):,.0f}"),
+        ("Other", f"${cm.get('other_usd_per_mw', 66_852):,.0f}/MW"),
         ("Depreciation", f"{cm.get('depreciation_years', 40)} years"),
         ("Annual cycles", f"{cm.get('annual_cycles', 300)}"),
     ]
@@ -516,7 +522,102 @@ def _build_summary_sheet(wb, dam_registry, scored_pairs):
     return ws
 
 
-def _export_excel(dam_registry, scored_pairs):
+DH_COLUMNS = [
+    ("dh_rank", "D/H Rank", 10, "center"),
+    ("upper_dam_name", "Upper Dam", 28, "left"),
+    ("lower_dam_name", "Lower Dam", 28, "left"),
+    ("head_m", "Head (m)", 12, "right"),
+    ("distance_km", "Distance (km)", 14, "right"),
+    ("distance_head_ratio", "D/H Ratio", 12, "right"),
+    ("upper_capacity_mcm", "Upper Cap (MCM)", 16, "right"),
+    ("lower_capacity_mcm", "Lower Cap (MCM)", 16, "right"),
+    ("grid_distance_km", "Grid Dist (km)", 14, "right"),
+    ("screening_status", "Screening", 14, "center"),
+    ("fail_reason", "Fail Reason", 52, "left"),
+]
+
+DH_NUMBER_FORMATS = {
+    "head_m": "#,##0",
+    "distance_km": "0.0",
+    "distance_head_ratio": "0.00",
+    "upper_capacity_mcm": "#,##0.0",
+    "lower_capacity_mcm": "#,##0.0",
+    "grid_distance_km": "0.0",
+}
+
+
+def _build_top20_dh_sheet(wb, all_pairs, scored_pairs):
+    if all_pairs is None or len(all_pairs) == 0:
+        return
+
+    passed_keys = set()
+    if scored_pairs is not None and len(scored_pairs) > 0:
+        for _, r in scored_pairs.iterrows():
+            passed_keys.add((r.get("upper_dam_id"), r.get("lower_dam_id")))
+
+    from ..config import DATA_PROCESSED
+    filtered_reasons = {}
+    filtered_path = DATA_PROCESSED / "filtered_pairs.json"
+    if filtered_path.exists():
+        fp = pd.read_json(filtered_path)
+        for _, r in fp.iterrows():
+            key = (r.get("upper_dam_id"), r.get("lower_dam_id"))
+            reasons = r.get("tier1_reasons") or r.get("energy_filter_reasons") or ""
+            if reasons and reasons != "all criteria met":
+                filtered_reasons[key] = reasons
+
+    df = all_pairs.copy()
+    df = df[df["distance_head_ratio"].notna()].sort_values("distance_head_ratio").head(20).reset_index(drop=True)
+    df["dh_rank"] = df.index + 1
+    df["screening_status"] = df.apply(
+        lambda r: "Passed" if (r.get("upper_dam_id"), r.get("lower_dam_id")) in passed_keys else "Failed", axis=1
+    )
+    df["fail_reason"] = df.apply(
+        lambda r: filtered_reasons.get((r.get("upper_dam_id"), r.get("lower_dam_id")), ""), axis=1
+    )
+
+    available_keys = set(df.columns.tolist())
+    col_defs = [(k, l, w, a) for k, l, w, a in DH_COLUMNS if k in available_keys]
+
+    ws = wb.create_sheet("Top 20 by DH Ratio")
+    ws.sheet_properties.tabColor = "8B4513"
+
+    for col_idx, (key, label, width, align) in enumerate(col_defs, 1):
+        cell = ws.cell(row=1, column=col_idx, value=label)
+        cell.font = HEADER_FONT
+        cell.fill = HEADER_FILL
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        cell.border = HEADER_BORDER
+        ws.column_dimensions[get_column_letter(col_idx)].width = width
+    ws.row_dimensions[1].height = 36
+
+    for row_idx, (_, pair) in enumerate(df.iterrows(), 2):
+        fill = STRIPE_FILL if row_idx % 2 == 0 else WHITE_FILL
+        for col_idx, (key, label, width, align) in enumerate(col_defs, 1):
+            val = pair.get(key)
+            if isinstance(val, float) and pd.isna(val):
+                val = None
+            cell = ws.cell(row=row_idx, column=col_idx, value=val)
+            cell.font = BODY_FONT
+            cell.fill = fill
+            cell.border = BODY_BORDER
+            cell.alignment = Alignment(horizontal=align, vertical="center")
+            fmt = DH_NUMBER_FORMATS.get(key)
+            if fmt and val is not None:
+                cell.number_format = fmt
+            if key == "screening_status":
+                if val == "Passed":
+                    cell.font = Font(name=FONT, size=10, bold=True, color=GREEN)
+                elif val == "Failed":
+                    cell.font = Font(name=FONT, size=10, bold=True, color=RED)
+        ws.row_dimensions[row_idx].height = 22
+
+    ws.auto_filter.ref = f"A1:{get_column_letter(len(col_defs))}21"
+    ws.freeze_panes = "A2"
+    ws.sheet_view.showGridLines = False
+
+
+def _export_excel(dam_registry, scored_pairs, all_pairs=None):
     output_path = OUTPUT_DIR / "results.xlsx"
 
     dam_col_defs = _build_dam_col_defs(dam_registry.columns.tolist())
@@ -542,6 +643,7 @@ def _export_excel(dam_registry, scored_pairs):
         wb = writer.book
 
         _build_summary_sheet(wb, dam_registry, scored_pairs)
+        _build_top20_dh_sheet(wb, all_pairs, scored_pairs)
 
         ws_dam = wb["Dam Registry"]
         _style_data_sheet(ws_dam, dam_col_defs)
@@ -662,7 +764,7 @@ def _export_geojson(dam_registry, scored_pairs):
                 "distance_head_ratio": pair.get("distance_head_ratio"),
                 "energy_mwh": pair.get("energy_mwh_standard"),
                 "score": pair.get("composite_score"),
-                "lcoe_eur_per_mwh": pair.get("lcoe_eur_per_mwh"),
+                "lcoe_usd_per_mwh": pair.get("lcoe_usd_per_mwh"),
             },
         })
 

@@ -10,7 +10,9 @@
       "WebFetch(*)",
       "WebSearch(*)",
       "Agent(*)",
-      "mcp__geospatial__*"
+      "mcp__geospatial__*",
+      "Bash(mkdir -p \"/Users/devdevnani/Clean Bridge Energy/geospatial-analyst/.claude/skills/scan-terrain\")",
+      "Bash(ln -s \"../../../plugins/psh-screening/commands/scan-terrain.md\" \"/Users/devdevnani/Clean Bridge Energy/geospatial-analyst/.claude/skills/scan-terrain/SKILL.md\")"
     ]
   },
   "enableAllProjectMcpServers": true

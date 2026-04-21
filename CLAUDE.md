@@ -22,7 +22,8 @@ plugins/
     commands/
       collect-dams.md              Collect dam data for any country from global databases
       normalize-dams.md            Transform any data file into standard format for screening
-      screen-dams.md               Screen collected dams for PSH potential
+      screen-dams.md               Screen existing dam pairs for PSH potential
+      scan-terrain.md              Greenfield siting scan: find new reservoir sites near existing dams
     skills/
       methodology/SKILL.md         Scoring formulas, energy calculations, process overview
       constraints/SKILL.md         Engineering filter thresholds
@@ -32,8 +33,8 @@ plugins/
 
 mcp-servers/
   geospatial/
-    server.py                      FastMCP server: 16 MCP tools
-    config.py                      Paths, config loading
+    server.py                      FastMCP server: MCP tools for screening and siting
+    config.py                      Paths, config loading (auto-unwraps {value, description} blocks)
     geo.py                         Haversine distance calculations
     ingestion/                     Data collection and enrichment
       download.py                  Generic file download utilities
@@ -50,14 +51,24 @@ mcp-servers/
       filters.py                   Engineering constraint filters
     scoring/
       energy.py                    Energy potential: head x volume x efficiency
-      cost.py                      PSH vs battery cost comparison
+      cost.py                      Pair-screening cost model (existing-pair workflow)
       composite.py                 Weighted composite scoring
     terrain/
       profiles.py                  SRTM elevation profiles between dam pairs
+      dem.py                       DEM patch loading and pixel-to-latlon conversion
+    siting/                        Greenfield siting: find new reservoir sites near existing dams
+      basins.py                    Watershed basin detection + saddle + area-vs-fill curve
+      scanner.py                   Vectorized Tier 1 viability + per-basin optimization orchestration
+      cost.py                      Per-candidate 2D optimization over (fill_depth, penstock_diameter)
+      scoring.py                   Cross-dam BallTree dedup + composite scoring
+      run_scan.py                  Background worker (launched by siting_scan MCP tool)
     visualization/
       maps.py                      Interactive Folium maps (screening results + overview)
       export.py                    Excel (styled), JSON, 3D KML, GeoJSON output
       terrain_viz.py               Terrain profile charts
+      siting_map.py                Siting status map: dams colored by tier result + candidate pins
+      siting_export.py             Siting Excel: Funnel Summary + Candidates sheets
+      siting_profiles.py           Top-15 terrain profile PDF for siting candidates
 
 scripts/
   render_report.py                 Jinja2 + WeasyPrint: renders executive summary HTML to PDF
@@ -72,6 +83,10 @@ output/                            Generated results (gitignored)
   top_pairs_3d.kml                 3D terrain view for Google Earth
   pairs.geojson                    For GIS tools
   executive-summary.pdf            Expert review report (generated on demand)
+  siting_results.xlsx              Siting: Funnel Summary + Candidates sorted by composite score
+  siting_map.html                  Siting: Dam status map + candidate site pins with basin footprints
+  siting_profiles.pdf              Siting: Top-15 terrain profiles (multi-page)
+  siting_tier1.xlsx                Siting: Tier 1 funnel + per-dam viability
 ```
 
 ## MCP Tools
@@ -94,11 +109,16 @@ output/                            Generated results (gitignored)
 | `download_file` | Download any URL to cache |
 | `inspect_file` | Inspect any tabular file (columns, sample rows) |
 | `parse_tabular` | Parse file with agent-provided column mapping |
+| `tier1_elevation_screen` | Run Tier 1 analytic viability mask on all dams. Excludes existing-PSH dams. Saves siting_tier1.json |
+| `generate_tier1_results` | Generate Tier 1 outputs: Excel (funnel + dam table) and map. Requires siting_tier1.json |
+| `siting_scan` | Start watershed basin detection + 2D CapEx optimization in the background. Uses siting_tier1.json as input |
+| `siting_scan_status` | Poll siting_scan for progress and results |
+| `generate_siting_results` | Generate siting outputs: Excel, map, terrain profiles PDF |
 
 ## How It Works
 
 - **Skills** are domain knowledge the agent loads: methodology, constraints, data sources
-- **Commands** are workflows the agent executes: `/collect-dams` gathers data, `/normalize-dams` transforms it, `/screen-dams` screens for PSH potential
+- **Commands** are workflows the agent executes: `/collect-dams` gathers data, `/normalize-dams` transforms it, `/screen-dams` screens existing dam pairs, `/scan-terrain` scans for new reservoir sites
 - **MCP server** is the typed tool interface: every operation is an MCP tool with explicit arguments and structured output
 - **Data** lives in `data/` as JSON, xlsx, or CSV files. The agent lists what's there and asks the user which file to work with.
 

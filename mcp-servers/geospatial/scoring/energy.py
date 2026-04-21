@@ -54,8 +54,19 @@ def calculate_pair_energy(pair):
     energy_mwh = calculate_energy(head, vol)
     power_mw = energy_mwh / duration_hours
 
+    upper_fill = pair.get("upper_fill_rate_pct")
+    lower_fill = pair.get("lower_fill_rate_pct")
+    fills = [f / 100 for f in [upper_fill, lower_fill] if f is not None and not pd.isna(f)]
+    if fills:
+        variable_fraction = min(min(fills), fill_fraction)
+        vol_variable = usable_volume_m3 * variable_fraction
+        energy_mwh_variable = calculate_energy(head, vol_variable)
+    else:
+        energy_mwh_variable = None
+
     return {
         "energy_mwh_standard": round(energy_mwh, 1),
+        "energy_mwh_variable_fill": round(energy_mwh_variable, 1) if energy_mwh_variable is not None else None,
         f"power_mw_{duration_hours}hr": round(power_mw, 1),
         "data_quality": data_quality,
     }

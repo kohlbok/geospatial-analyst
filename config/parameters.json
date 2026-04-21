@@ -7,8 +7,10 @@
     "_description": "Hard cutoffs applied to every dam pair before scoring. Pairs that fail any filter are excluded from ranking. Adjust these to widen or narrow the candidate pool.",
     "min_head_m": {"value": 100, "description": "Minimum elevation difference between upper and lower dam (meters). Below this, energy output is too low to justify tunnel and penstock infrastructure. Feeds into: pair screening pass/fail."},
     "max_distance_km": {"value": 40, "description": "Maximum straight-line distance between dams (km). Beyond this, penstock/tunnel costs dominate and make the project uneconomic. Feeds into: pair screening pass/fail."},
-    "min_capacity_mcm": {"value": 1.5, "description": "Minimum reservoir capacity in million cubic meters. Both dams in a pair must meet this threshold. Small reservoirs can't store enough water for meaningful energy storage. Feeds into: pair screening pass/fail."},
-    "max_distance_head_ratio": {"value": 50, "description": "Maximum ratio of distance (m) to head (m). High ratios mean long tunnels for little elevation gain, which is uneconomic. A ratio of 50 means 5km distance per 100m of head. Feeds into: pair screening pass/fail."}
+    "min_capacity_mcm": {"value": 0.8, "description": "Minimum reservoir capacity in million cubic meters. Both dams in a pair must meet this threshold. Small reservoirs can't store enough water for meaningful energy storage. Feeds into: pair screening pass/fail."},
+    "max_distance_head_ratio": {"value": 50, "description": "Maximum ratio of distance (m) to head (m). High ratios mean long tunnels for little elevation gain, which is uneconomic. A ratio of 50 means 5km distance per 100m of head. Feeds into: pair screening pass/fail."},
+    "min_power_mw": {"value": 330, "description": "Minimum installed power capacity (MW). Morocco-specific: sized to replace one 330 MW coal unit. Applied after energy calculation. Feeds into: post-energy filter pass/fail."},
+    "min_energy_mwh": {"value": 1200, "description": "Minimum energy storage capacity per cycle (MWh). Derived from 330 MW x 3hr discharge / 0.78 efficiency = ~1270 MWh, rounded down to widen the candidate pool. Applied after energy calculation. Feeds into: post-energy filter pass/fail."}
   },
 
   "screening": {
@@ -33,17 +35,18 @@
   },
 
   "cost_model": {
-    "_description": "Component costs for calculating total PSH project CAPEX. Total CAPEX = penstock + upper reservoir + lower reservoir + powerhouse + tunneling + grid connection + fixed costs. CAPEX per MWh = total CAPEX / energy capacity. This is the main cost metric used for scoring.",
-    "penstock_eur_per_km": {"value": 43000000, "description": "Penstock (pressure pipe) cost per km of straight-line distance between dams (EUR). Major cost driver for distant pairs. Feeds into: total CAPEX calculation."},
-    "reservoir_upper_eur_per_mcm": {"value": 14000000, "description": "Upper reservoir preparation cost per million cubic meters (EUR). Lower than lower reservoir because upper dams often need less modification. Feeds into: total CAPEX calculation."},
-    "reservoir_lower_eur_per_mcm": {"value": 36000000, "description": "Lower reservoir preparation cost per million cubic meters (EUR). Higher because lower reservoirs typically need more civil works. Feeds into: total CAPEX calculation."},
-    "powerhouse_eur_per_mw": {"value": 490000, "description": "Powerhouse and turbine cost per MW of installed capacity (EUR). Scales with the power rating of the facility. Feeds into: total CAPEX calculation."},
-    "fixed_costs_eur": {"value": 42000000, "description": "Fixed project costs independent of site characteristics (EUR). Covers engineering, permitting, access roads, environmental studies. Feeds into: total CAPEX calculation."},
-    "grid_connection_usd_per_km": {"value": 1000000, "description": "Grid interconnection cost per km to nearest HV substation (USD). Converted to EUR using eur_to_usd rate. Feeds into: total CAPEX calculation."},
-    "tunneling_eur_per_km": {"value": 6500000, "description": "Tunnel boring cost per km (EUR). Applied when terrain profile analysis identifies tunnel segments. Feeds into: total CAPEX calculation."},
+    "_description": "Component costs for PSH project CAPEX. All values in USD (2025, inflated from 2018 at 3.5%/yr). The 'phase' field controls which components are summed: phase 1 = penstock + powerhouse only; phase 2 = all components.",
+    "phase": {"value": 1, "description": "Active cost phase. 1 = penstock + powerhouse only (Phase 1 scope). 2 = all components. Increment when ready to include Phase 2 costs."},
+    "penstock_usd_per_km": {"value": 46960000, "description": "Penstock cost per km (USD). 2025 value inflated from 2018 at 3.5%/yr. Active in Phase 1+. Feeds into: total CAPEX."},
+    "powerhouse_usd_per_mw": {"value": 467967, "description": "Powerhouse mechanical cost per MW (USD). 2025 value inflated from 2018 at 3.5%/yr. Active in Phase 1+. Feeds into: total CAPEX."},
+    "reservoir_upper_usd_per_mcm": {"value": 15230000, "description": "Upper reservoir preparation cost per MCM (USD). 15.23 USD/m3 x 1,000,000. 2025 value. Active in Phase 2+. Feeds into: total CAPEX."},
+    "reservoir_lower_usd_per_mcm": {"value": 38770000, "description": "Lower reservoir preparation cost per MCM (USD). 38.77 USD/m3 x 1,000,000. 2025 value. Active in Phase 2+. Feeds into: total CAPEX."},
+    "substation_usd_per_mw": {"value": 92565, "description": "Substation and electrical works cost per MW (USD). 2025 value. Active in Phase 2+. Feeds into: total CAPEX."},
+    "roads_usd_fixed": {"value": 10800000, "description": "Roads and access fixed cost (USD). 2025 value. Active in Phase 2+. Feeds into: total CAPEX."},
+    "other_usd_per_mw": {"value": 66852, "description": "Other costs per MW (USD). 2025 value. Active in Phase 2+. Feeds into: total CAPEX."},
+    "tunneling_usd_per_km": {"value": 0, "description": "Tunnel boring cost per km (USD). Set to 0 until terrain profile analysis is active. Phase 2+. Feeds into: total CAPEX."},
     "depreciation_years": {"value": 40, "description": "Project lifetime for LCOE calculation (years). PSH plants typically last 40-80 years. Feeds into: LCOE = total CAPEX / (energy_per_cycle x annual_cycles x years)."},
-    "annual_cycles": {"value": 300, "description": "Number of charge/discharge cycles per year. Typical for a daily-cycling PSH plant (roughly 300 working days). Feeds into: LCOE calculation."},
-    "eur_to_usd": {"value": 1.08, "description": "EUR to USD exchange rate. Used to convert between currencies in cost calculations."}
+    "annual_cycles": {"value": 300, "description": "Number of charge/discharge cycles per year. Typical for a daily-cycling PSH plant (roughly 300 working days). Feeds into: LCOE calculation."}
   },
 
   "physics": {
@@ -52,7 +55,7 @@
     "water_density_kg_m3": {"value": 1000, "description": "Density of water (kg/m3). Standard value. Feeds into: energy_mwh calculation."},
     "gravity_m_s2": {"value": 9.81, "description": "Gravitational acceleration (m/s2). Standard value. Feeds into: energy_mwh calculation."},
     "usable_volume_fraction": {"value": 0.6, "description": "Fraction of reservoir capacity assumed usable for pumped storage (0-1). 0.6 means 60% of total volume is available for cycling. Accounts for minimum operating levels, sediment, and competing water uses. Feeds into: energy_mwh calculation."},
-    "power_duration_hours": {"value": 8, "description": "Hours of continuous power output at rated capacity. Used to derive MW from MWh: power_mw = energy_mwh / duration_hours. 8 hours is standard for grid-scale storage."}
+    "power_duration_hours": {"value": 3, "description": "Hours of continuous power output at rated capacity. Used to derive MW from MWh: power_mw = energy_mwh / duration_hours. Set to 3 hours (minimum discharge floor) to widen the candidate pool while still matching the 330 MW coal replacement target."}
   },
 
   "ingestion": {
@@ -73,6 +76,47 @@
     "_description": "Parameters for SRTM elevation data enrichment and validation.",
     "neighbor_offset_degrees": {"value": 0.005, "description": "Offset in degrees (~500m) for sampling neighboring elevation points around each dam. Used to validate elevation readings. Feeds into: elevation enrichment."},
     "discrepancy_warning_m": {"value": 20, "description": "Threshold (meters) for flagging elevation discrepancies between SRTM and other sources. Dams with deltas above this get a warning flag. Feeds into: elevation quality assessment."}
+  },
+
+  "siting": {
+    "_description": "Parameters for PSH siting: finding new reservoir sites near existing dams using watershed-based basin detection and per-candidate CapEx optimization.",
+
+    "search_radius_km": {"value": 20, "description": "Search radius around each dam (km). DEM patch size per dam. Larger radius widens the search but increases compute. Feeds into: DEM patch extent for Tier 1 and Tier 2."},
+    "min_head_m": {"value": 100, "description": "Minimum elevation difference between the existing dam and a candidate site (m). Below this, energy output is too low to justify construction. Feeds into: Tier 1 viability mask."},
+    "max_distance_head_ratio": {"value": 15.0, "description": "Maximum ratio of penstock distance (m) to head (m) at screening stage. Abdelmoumen reference is 4.0; 15.0 is a screening buffer that admits candidates for Tier 3 cost optimization. The real economic filter is Tier 3 (Darcy-Weisbach friction constraint + CapEx/MWh). Feeds into: Tier 1 and Tier 2 kill."},
+    "abdelmoumen_ratio_flag": {"value": 4.0, "description": "Distance-to-head ratio above which a surviving candidate is flagged as exceeding the Abdelmoumen reference. Informational only, does not kill. Feeds into: abdelmoumen_flag column."},
+
+    "tier1_resolution_m": {"value": 90, "description": "DEM resolution for Tier 1 analytic viability (m). SRTM 3-arc-second ~90m. Sufficient for head and ratio checks."},
+    "tier2_resolution_m": {"value": 30, "description": "DEM resolution for Tier 2 watershed and Tier 3 optimization (m). SRTM 1-arc-second ~30m. Required for accurate basin delineation and volume integration."},
+
+    "max_basins_per_dam_tier2": {"value": 10, "description": "Maximum number of basins to carry from Tier 2 per dam per direction. Ranked by max volume at saddle. Top-N proceed to Tier 3 optimization."},
+    "max_basins_per_dam_tier3": {"value": 3, "description": "Maximum number of optimized candidates per dam per direction after Tier 3. Ranked by CapEx/MWh. Feeds into: candidate table."},
+    "max_saddle_width_m": {"value": 500, "description": "Maximum saddle width (m) for a basin to be considered. Wider saddles require too much dam wall to close economically. Feeds into: Tier 2 kill."},
+    "max_wall_height_m": {"value": 30, "description": "Maximum additional fill above the natural saddle elevation (m). Models a constructed dam wall extending the natural basin. Wall cost is amortized into reservoir_usd_per_mcm."},
+    "max_fill_depth_m": {"value": 30, "description": "Maximum water depth above the basin's natural sink (m). Caps the constructed-reservoir model. Tayeb guidance: upper reservoirs are 25-30m embankments above natural ground (Abdelmoumen operates 1293-1316m = 23m). Feeds into: Tier 3 fill-curve cap."},
+    "max_footprint_area_m2": {"value": 280000, "description": "Maximum submerged footprint area (m2). ~600m equivalent diameter. Tayeb guidance: constructed reservoirs typically 200-500m diameter, upper bound 400-600m. Feeds into: Tier 3 fill-curve cap."},
+    "fill_depth_samples": {"value": 20, "description": "Number of fill-level samples between sink and saddle+wall for the area-vs-fill curve per basin. Higher = more accurate optimization but more compute. Feeds into: Tier 3 per-basin volume curve."},
+
+    "target_power_mw": {"value": 250, "description": "Target installed power capacity (MW). Screening default sized for a ~250 MW PSH plant. Smaller target means smaller required penstock diameter, which widens the economically-viable candidate pool. Used to derive required flow rate and penstock diameter."},
+    "min_energy_mwh": {"value": 600, "description": "Minimum energy storage capacity per cycle (MWh). 250 MW x ~3hr discharge / 0.78 efficiency. Below this, the site is too small to justify the fixed costs of a PSH plant. Feeds into: Tier 3 kill and optimization constraint."},
+    "max_total_capex_usd": {"value": 120000000, "description": "Maximum total project CapEx (USD). Derived from battery benchmark: $100k/MWh x 1200 MWh = $120M. Projects above this AND above marginal ratio are killed. Feeds into: Tier 3 kill."},
+    "battery_capex_usd_per_mwh": {"value": 100000, "description": "Battery storage benchmark CapEx per MWh (USD). PSH must beat this to be cost-competitive. 4-hour BESS benchmark. Feeds into: passes_battery_test, marginal_flag, siting composite score."},
+    "marginal_threshold_multiplier": {"value": 1.5, "description": "Candidates with CapEx/MWh up to this multiple of the battery benchmark are flagged marginal but retained. 1.5 = up to $150k/MWh. Feeds into: marginal_flag column."},
+
+    "max_friction_fraction": {"value": 0.10, "description": "Maximum allowed friction head loss as fraction of gross head (0-1). 0.10 = up to 10% head loss. Used as the upper bound when sweeping penstock diameter; economic optimum typically falls below this limit."},
+    "darcy_friction_factor": {"value": 0.012, "description": "Darcy-Weisbach friction factor for steel penstock pipe. 0.012 is typical for smooth steel. Used in friction loss calculation."},
+    "penstock_base_rate_usd_per_km_per_m_dia": {"value": 9630000, "description": "Penstock unit cost per km per meter of diameter (USD). Calibrated from Abdelmoumen: $103M / (2.2km x 4.86m) = $9.63M/km/m. Linear in diameter; sufficient accuracy for screening. Feeds into: penstock_cost_usd."},
+    "penstock_diameter_range_m": {"value": [1.0, 10.0], "description": "Penstock diameter search range (m) for per-candidate optimization. Min reflects minimum constructible pipe; max reflects largest practical PSH penstock."},
+    "penstock_diameter_samples": {"value": 20, "description": "Number of diameter samples across the range for per-candidate CapEx optimization. 20 gives ~0.5m resolution across the default range."},
+
+    "candidate_merge_distance_m": {"value": 500, "description": "Distance threshold (m) for merging candidates across dams after Tier 3. Candidates within this distance cluster; the parent dam with best CapEx/MWh keeps the candidate, others are dropped. Feeds into: cross-dam deduplication."}
+  },
+
+  "siting_scoring_weights": {
+    "_description": "Weights for siting composite score (must sum to 1.0). Each metric is normalized 0-1 across all candidates, then multiplied by its weight. Higher score = better candidate. Weights per Tayeb Amegroud (Apr 2026): 40% CapEx/MWh, 40% distance-to-head ratio, 20% grid distance.",
+    "capex_per_mwh": {"value": 0.40, "description": "Weight for CapEx/MWh (lower is better). Primary economic metric. Captures head, volume, and efficiency."},
+    "distance_head_ratio": {"value": 0.40, "description": "Weight for penstock distance-to-head ratio (lower is better). Abdelmoumen reference is 4.0. Short penstock per meter of head = efficient project."},
+    "grid_distance": {"value": 0.20, "description": "Weight for grid distance of the existing dam (lower is better). Proxy for interconnection cost."}
   },
 
   "overview_map": {

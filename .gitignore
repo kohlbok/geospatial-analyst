@@ -11,3 +11,5 @@ venv/
 .DS_Store
 .mcp.json
 paths.json
+.claude/scheduled_tasks.lock
+.claude/worktrees/

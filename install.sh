@@ -69,6 +69,9 @@ packages = [
     ('folium', 'folium'),
     ('pandas', 'pandas'),
     ('numpy', 'numpy'),
+    ('scipy', 'scipy'),
+    ('scikit-image', 'skimage'),
+    ('scikit-learn', 'sklearn'),
     ('openpyxl', 'openpyxl'),
     ('simplekml', 'simplekml'),
     ('orjson', 'orjson'),
@@ -91,7 +94,7 @@ warnings = []
 for name, module in optional:
     try:
         __import__(module)
-    except ImportError:
+    except Exception:
         warnings.append(name)
 
 if failures:
@@ -129,8 +132,11 @@ success ".mcp.json configured"
 # ---------- Summary ----------
 header "Setup complete"
 echo ""
-echo "  To screen dams:"
+echo "  Workflow:"
 echo "    1. Open Claude Code: claude"
 echo "    2. Drop your data files into data/"
-echo "    3. Run /normalize-dams then /screen-dams"
+echo "    3. /collect-dams [country]   (optional, scrapes global databases)"
+echo "    4. /normalize-dams           (standardize columns into the screening schema)"
+echo "    5. /screen-dams              (find pairs between existing dams)"
+echo "    6. /scan-terrain             (find new reservoir sites for greenfield siting)"
 echo ""

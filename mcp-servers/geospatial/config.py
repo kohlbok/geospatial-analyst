@@ -152,7 +152,7 @@ def _default(obj):
 
 
 def safe_dumps(obj, **kwargs):
-    opts = orjson.OPT_NON_STR_KEYS
+    opts = orjson.OPT_NON_STR_KEYS | orjson.OPT_SERIALIZE_NUMPY
     if kwargs.get("indent"):
         opts |= orjson.OPT_INDENT_2
     return orjson.dumps(obj, default=_default, option=opts).decode()
@@ -161,7 +161,7 @@ def safe_dumps(obj, **kwargs):
 def _save_json(dams, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "wb") as f:
-        f.write(orjson.dumps(dams, default=_default, option=orjson.OPT_INDENT_2))
+        f.write(orjson.dumps(dams, default=_default, option=orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY))
 
 
 def load_dams():

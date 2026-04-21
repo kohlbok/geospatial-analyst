@@ -17,9 +17,10 @@ Install dependencies and configure MCP servers for the current platform.
      MCP server: geospatial configured
 
    Ready to go. Drop your data files into data/ and run:
-     /collect-dams [country] - to collect from global databases
-     /normalize-dams - to transform an existing file for screening
-     /screen-dams - to screen for PSH potential
+     /collect-dams [country] - collect from global databases
+     /normalize-dams - transform an existing file into the screening schema
+     /screen-dams - find pairs between existing dams (Phase 1)
+     /scan-terrain - find new reservoir sites for greenfield siting
 
    IMPORTANT: Start a new session to connect the MCP server.
      CLI: type /mcp to reload, or restart claude

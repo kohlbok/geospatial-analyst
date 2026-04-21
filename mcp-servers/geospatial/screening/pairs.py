@@ -20,7 +20,8 @@ def _valid(val):
 
 def generate_pairs(dam_registry):
     dams = dam_registry.to_dict("records")
-    valid_dams = [d for d in dams if _valid(d.get("lat")) and _valid(d.get("lon")) and _valid(d.get("elevation_wall_m"))]
+    excluded_statuses = {"removed", "operational psh", "existing_psh"}
+    valid_dams = [d for d in dams if _valid(d.get("lat")) and _valid(d.get("lon")) and _valid(d.get("elevation_wall_m")) and d.get("status", "").strip().lower() not in excluded_statuses]
     n = len(valid_dams)
     total_pairs = n * (n - 1) // 2
     log.info(f"Generating pairs from {n} dams with coords+elevation ({total_pairs} combinations, {len(dams) - n} excluded)")
@@ -70,6 +71,10 @@ def generate_pairs(dam_registry):
             "lower_lon": lower["lon"],
             "lower_elevation_m": lower.get("elevation_wall_m"),
             "lower_capacity_mcm": lower.get("capacity_mcm"),
+            "upper_status": upper.get("status"),
+            "lower_status": lower.get("status"),
+            "upper_fill_rate_pct": upper.get("fill_rate_pct"),
+            "lower_fill_rate_pct": lower.get("fill_rate_pct"),
             "head_m": head,
             "distance_km": round(distance_km, 2),
             "distance_head_ratio": round(distance_head_ratio, 2),

@@ -94,7 +94,7 @@ def generate_pairs() -> str:
 def screen_pairs() -> str:
     """Apply screening filters and score all pairs. Returns ranked list."""
     import pandas as pd
-    from geospatial.screening.filters import apply_tier1_filters
+    from geospatial.screening.filters import apply_tier1_filters, apply_energy_filters
     from geospatial.scoring.energy import calculate_all_energies
     from geospatial.scoring.cost import calculate_all_costs
     from geospatial.scoring.composite import score_pairs as do_score
@@ -113,7 +113,13 @@ def screen_pairs() -> str:
         return safe_dumps({"status": "ok", "viable_pairs": 0, "message": "No pairs passed filters"})
 
     with_energy = calculate_all_energies(viable)
-    with_costs = calculate_all_costs(with_energy)
+    energy_filtered = apply_energy_filters(with_energy)
+    viable_energy = energy_filtered[energy_filtered["energy_filter_status"] == "pass"].copy()
+
+    if len(viable_energy) == 0:
+        return safe_dumps({"status": "ok", "viable_pairs": 0, "message": "No pairs passed energy/power filters"})
+
+    with_costs = calculate_all_costs(viable_energy)
     scored = do_score(with_costs)
 
     scored.to_json(DATA_PROCESSED / "scored_pairs.json", orient="records", indent=2, default_handler=str)
@@ -127,7 +133,8 @@ def screen_pairs() -> str:
     return safe_dumps({
         "status": "ok",
         "total_evaluated": len(pairs),
-        "viable_pairs": len(viable),
+        "tier1_viable": len(viable),
+        "energy_viable": len(viable_energy),
         "scored_pairs": len(scored),
         "top_10": top_list,
     })
@@ -146,8 +153,11 @@ def generate_map() -> str:
     scored_path = DATA_PROCESSED / "scored_pairs.json"
     scored = pd.read_json(scored_path) if scored_path.exists() else None
 
+    all_pairs_path = DATA_PROCESSED / "all_pairs.json"
+    all_pairs = pd.read_json(all_pairs_path) if all_pairs_path.exists() else None
+
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    map_path = generate_combined_map(pd.DataFrame(dams), scored)
+    map_path = generate_combined_map(pd.DataFrame(dams), scored, all_pairs)
     return safe_dumps({"status": "ok", "map": str(map_path)})
 
 
@@ -180,8 +190,11 @@ def generate_results() -> str:
         return safe_dumps({"error": "Run screen_pairs first"})
 
     scored = pd.read_json(scored_path)
+    all_pairs_path = DATA_PROCESSED / "all_pairs.json"
+    all_pairs = pd.read_json(all_pairs_path) if all_pairs_path.exists() else None
+
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    paths = generate_clean_outputs(pd.DataFrame(dams), scored)
+    paths = generate_clean_outputs(pd.DataFrame(dams), scored, all_pairs)
     return safe_dumps({"status": "ok", "outputs": paths})
 
 
@@ -226,12 +239,12 @@ def generate_executive_summary(expert_review: str) -> str:
         "efficiency": int(config["physics"]["round_trip_efficiency"] * 100),
         "usable_volume_pct": int(config["physics"].get("usable_volume_fraction", 0.6) * 100),
         "power_duration_hours": config["physics"].get("power_duration_hours", 8),
-        "penstock_per_km": config["cost_model"]["penstock_eur_per_km"],
-        "upper_res_per_mcm": config["cost_model"]["reservoir_upper_eur_per_mcm"],
-        "lower_res_per_mcm": config["cost_model"]["reservoir_lower_eur_per_mcm"],
-        "powerhouse_per_mw": config["cost_model"]["powerhouse_eur_per_mw"],
-        "fixed_costs": config["cost_model"]["fixed_costs_eur"],
-        "grid_per_km": config["cost_model"]["grid_connection_usd_per_km"],
+        "penstock_per_km": config["cost_model"]["penstock_usd_per_km"],
+        "upper_res_per_mcm": config["cost_model"]["reservoir_upper_usd_per_mcm"],
+        "lower_res_per_mcm": config["cost_model"]["reservoir_lower_usd_per_mcm"],
+        "powerhouse_per_mw": config["cost_model"]["powerhouse_usd_per_mw"],
+        "fixed_costs": config["cost_model"].get("roads_usd_fixed", 0),
+        "grid_per_km": config["cost_model"].get("grid_connection_usd_per_km", 0),
         "weights": config["scoring_weights"],
         "pairs": pairs_data,
     }
@@ -460,6 +473,304 @@ def fetch_under_construction() -> str:
         "count": len(records),
         "staged": result,
         "sample": records[:3],
+    })
+
+
+@mcp.tool()
+def tier1_elevation_screen() -> str:
+    """Run Tier 1 elevation viability check on all dams. Excludes existing PSH dams. Saves siting_tier1.json."""
+    from geospatial.terrain.dem import load_dem_patch
+    from geospatial.siting.scanner import tier1_screen
+
+    dams = load_dams()
+    if dams is None:
+        return safe_dumps({"error": "No data file selected. Call load_dam_registry first."})
+
+    config = reload_config()
+    siting = config.get("siting", {})
+    search_radius_km = siting.get("search_radius_km", 20)
+    resolution_m = siting.get("tier1_resolution_m", 90)
+
+    def _is_existing_psh(dam):
+        status = str(dam.get("status") or "").lower()
+        return "psh" in status or "step" in status
+
+    with_coords = [d for d in dams if d.get("lat") is not None and d.get("lon") is not None]
+    screened = [d for d in with_coords if not _is_existing_psh(d)]
+    psh_excluded = len(with_coords) - len(screened)
+
+    results = []
+    kill_counts = {"flat_terrain": 0, "ratio_too_high": 0, "missing_coordinates_or_elevation": 0, "other": 0}
+    survivors = 0
+
+    for dam in screened:
+        lat = float(dam["lat"])
+        lon = float(dam["lon"])
+        patch = load_dem_patch(lat, lon, search_radius_km, resolution_m=resolution_m)
+        if patch is None:
+            kill_counts["other"] += 1
+            results.append({"dam_id": dam.get("id"), "dam_name": dam.get("name"), "viable_up": False, "viable_down": False, "kill_reason": "no_dem_data"})
+            continue
+
+        result = tier1_screen(dam, patch, config)
+        result["dam_id"] = dam.get("id")
+        result["dam_name"] = dam.get("name")
+        result["dam_lat"] = lat
+        result["dam_lon"] = lon
+
+        if result.get("viable_up") or result.get("viable_down"):
+            survivors += 1
+        else:
+            reason = result.get("kill_reason", "other")
+            kill_counts[reason] = kill_counts.get(reason, 0) + 1
+
+        results.append(result)
+
+    DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
+    import orjson
+    with open(DATA_PROCESSED / "siting_tier1.json", "wb") as f:
+        f.write(orjson.dumps(results, option=orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY))
+
+    return safe_dumps({
+        "status": "ok",
+        "total_dams": len(dams),
+        "psh_excluded": psh_excluded,
+        "tier1_input": len(screened),
+        "survivors": survivors,
+        "killed": len(screened) - survivors,
+        "kill_reasons": kill_counts,
+    })
+
+
+@mcp.tool()
+def generate_tier1_results() -> str:
+    """Generate Tier 1 outputs: Excel dam-by-dam table and map. Requires siting_tier1.json."""
+    import orjson
+    import pandas as pd
+    from geospatial.visualization.siting_export import generate_tier1_excel
+    from geospatial.visualization.siting_map import generate_siting_map
+
+    tier1_path = DATA_PROCESSED / "siting_tier1.json"
+    if not tier1_path.exists():
+        return safe_dumps({"error": "Run tier1_elevation_screen first"})
+
+    with open(tier1_path, "rb") as f:
+        tier1_results = orjson.loads(f.read())
+
+    dams = load_dams()
+    dams_df = pd.DataFrame(dams) if dams else pd.DataFrame()
+
+    paired_dam_ids = set()
+    scored_path = DATA_PROCESSED / "scored_pairs.json"
+    if scored_path.exists():
+        scored = pd.read_json(scored_path)
+        for _, row in scored.iterrows():
+            paired_dam_ids.add(row.get("upper_dam_id"))
+            paired_dam_ids.add(row.get("lower_dam_id"))
+        paired_dam_ids.discard(None)
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    outputs = {}
+
+    try:
+        excel_path = generate_tier1_excel(tier1_results)
+        outputs["excel"] = str(excel_path)
+    except Exception as e:
+        outputs["excel_error"] = str(e)
+
+    try:
+        map_path = generate_siting_map(dams_df, tier1_results, [], paired_dam_ids)
+        outputs["map"] = str(map_path)
+    except Exception as e:
+        outputs["map_error"] = str(e)
+
+    survivors = sum(1 for r in tier1_results if r.get("viable_up") or r.get("viable_down"))
+    return safe_dumps({
+        "status": "ok",
+        "tier1_survivors": survivors,
+        "total_screened": len(tier1_results),
+        "outputs": outputs,
+    })
+
+
+@mcp.tool()
+def siting_scan() -> str:
+    """Start basin-detection siting scan as a background process. Returns immediately. Call siting_scan_status to check progress."""
+    import subprocess, sys, os
+
+    tier1_path = DATA_PROCESSED / "siting_tier1.json"
+    if not tier1_path.exists():
+        return safe_dumps({"error": "Run tier1_elevation_screen first"})
+
+    dams = load_dams()
+    if dams is None:
+        return safe_dumps({"error": "No data file selected. Call load_dam_registry first."})
+
+    active_file = get_active_file()
+    log_path = DATA_PROCESSED / "siting_scan.log"
+    pid_path = DATA_PROCESSED / "siting_scan.pid"
+
+    if pid_path.exists():
+        pid = int(pid_path.read_text().strip())
+        try:
+            os.kill(pid, 0)
+            return safe_dumps({"status": "already_running", "pid": pid, "message": "Scan already in progress. Call siting_scan_status to check."})
+        except OSError:
+            pid_path.unlink()
+
+    script = Path(__file__).resolve().parent / "siting" / "run_scan.py"
+    with open(log_path, "w") as log:
+        proc = subprocess.Popen(
+            [sys.executable, str(script), active_file],
+            stdout=log, stderr=log,
+            cwd=str(Path(__file__).resolve().parent.parent.parent),
+        )
+    pid_path.write_text(str(proc.pid))
+
+    return safe_dumps({
+        "status": "started",
+        "pid": proc.pid,
+        "log_path": str(log_path),
+        "message": (
+            f"Siting scan running in background. Set a Monitor on {log_path} that tails for these line patterns: "
+            "'-> N candidates' (a dam produced candidates), 'DONE:' (scan complete), 'ERROR|Traceback' (failure). "
+            "The Monitor is event-driven — you'll be notified as things happen. "
+            "Only call siting_scan_status as a fallback if the Monitor goes silent for >10 minutes."
+        ),
+    })
+
+
+@mcp.tool()
+def siting_scan_status() -> str:
+    """Check progress of a running siting scan. Returns status, last log lines, and results summary when complete."""
+    import os
+
+    pid_path = DATA_PROCESSED / "siting_scan.pid"
+    log_path = DATA_PROCESSED / "siting_scan.log"
+    candidates_path = DATA_PROCESSED / "siting_candidates.json"
+    partial_path = DATA_PROCESSED / "siting_candidates_partial.json"
+
+    running = False
+    pid = None
+    if pid_path.exists():
+        pid = int(pid_path.read_text().strip())
+        try:
+            os.kill(pid, 0)
+            running = True
+        except OSError:
+            pid_path.unlink()
+
+    last_lines = []
+    if log_path.exists():
+        lines = log_path.read_text().splitlines()
+        last_lines = lines[-20:]
+
+    progress = None
+    if partial_path.exists():
+        with open(partial_path, "rb") as f:
+            import orjson
+            saved = orjson.loads(f.read())
+        progress = {"dams_done": len(saved.get("done_ids", [])), "candidates_so_far": len(saved.get("candidates", []))}
+
+    if running:
+        return safe_dumps({"status": "running", "pid": pid, "progress": progress, "log_tail": last_lines})
+
+    if candidates_path.exists():
+        with open(candidates_path, "rb") as f:
+            import orjson
+            candidates = orjson.loads(f.read())
+        beats = sum(1 for c in candidates if c.get("passes_battery_test"))
+        marginal = sum(1 for c in candidates if c.get("marginal_flag") and not c.get("passes_battery_test"))
+        return safe_dumps({
+            "status": "complete",
+            "viable_candidates": len(candidates),
+            "beats_battery": beats,
+            "marginal": marginal,
+            "log_tail": last_lines,
+        })
+
+    return safe_dumps({"status": "not_started", "log_tail": last_lines})
+
+
+@mcp.tool()
+def generate_siting_results() -> str:
+    """Generate siting outputs: Excel, map, terrain profiles PDF. Requires siting_candidates.json."""
+    import orjson
+    import pandas as pd
+    from geospatial.visualization.siting_map import generate_siting_map
+    from geospatial.visualization.siting_export import generate_siting_excel
+    from geospatial.visualization.siting_profiles import generate_siting_profiles
+
+    candidates_path = DATA_PROCESSED / "siting_candidates.json"
+    if not candidates_path.exists():
+        return safe_dumps({"error": "Run siting_scan first"})
+
+    with open(candidates_path, "rb") as f:
+        candidates = orjson.loads(f.read())
+
+    dams = load_dams()
+    if dams is None:
+        return safe_dumps({"error": "No data file selected. Call load_dam_registry first."})
+
+    dams_df = pd.DataFrame(dams)
+
+    tier1_results = []
+    tier1_path = DATA_PROCESSED / "siting_tier1.json"
+    if tier1_path.exists():
+        with open(tier1_path, "rb") as f:
+            tier1_results = orjson.loads(f.read())
+
+    paired_dam_ids = set()
+    scored_path = DATA_PROCESSED / "scored_pairs.json"
+    if scored_path.exists():
+        scored = pd.read_json(scored_path)
+        for _, row in scored.iterrows():
+            paired_dam_ids.add(row.get("upper_dam_id"))
+            paired_dam_ids.add(row.get("lower_dam_id"))
+        paired_dam_ids.discard(None)
+
+    tier1_survivors = [r for r in tier1_results if r.get("viable_up") or r.get("viable_down")]
+
+    funnel_summary = {
+        "total_dams": len(dams),
+        "paired_excluded": len(paired_dam_ids),
+        "tier1_input": len(tier1_results),
+        "tier1_survivors": len(tier1_survivors),
+        "killed_flat": sum(1 for r in tier1_results if r.get("kill_reason") == "flat_terrain"),
+        "killed_ratio": sum(1 for r in tier1_results if r.get("kill_reason") == "ratio_too_high"),
+        "killed_other_t1": sum(1 for r in tier1_results if r.get("kill_reason") not in (None, "flat_terrain", "ratio_too_high") and not r.get("viable_up") and not r.get("viable_down")),
+        "viable_candidates": len(candidates),
+        "dams_with_candidates": len({c.get("dam_id") for c in candidates}),
+        "beats_battery": sum(1 for c in candidates if c.get("passes_battery_test")),
+        "marginal": sum(1 for c in candidates if c.get("marginal_flag") and not c.get("passes_battery_test")),
+    }
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    outputs = {}
+
+    try:
+        excel_path = generate_siting_excel(candidates, funnel_summary)
+        outputs["excel"] = str(excel_path)
+    except Exception as e:
+        outputs["excel_error"] = str(e)
+
+    try:
+        map_path = generate_siting_map(dams_df, tier1_results, candidates, paired_dam_ids)
+        outputs["map"] = str(map_path)
+    except Exception as e:
+        outputs["map_error"] = str(e)
+
+    try:
+        profiles_path = generate_siting_profiles(candidates, dams_df)
+        outputs["profiles"] = str(profiles_path) if profiles_path else None
+    except Exception as e:
+        outputs["profiles_error"] = str(e)
+
+    return safe_dumps({
+        "status": "ok",
+        "candidates_count": len(candidates),
+        "funnel_summary": funnel_summary,
+        "outputs": outputs,
     })
 
 

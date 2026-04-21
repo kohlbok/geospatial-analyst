@@ -1,0 +1,1 @@
+../../../plugins/psh-screening/commands/scan-terrain.md

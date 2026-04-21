@@ -28,6 +28,12 @@ def apply_tier1_filters(pairs_df, params=None):
         status = "pass"
         reasons = []
 
+        upper_status = str(pair.get("upper_status", "")).lower()
+        lower_status = str(pair.get("lower_status", "")).lower()
+        if "operational psh" in upper_status or "operational psh" in lower_status:
+            status = "fail"
+            reasons.append("pair includes existing operational PSH reservoir")
+
         if pair["head_m"] < min_head:
             status = "fail"
             reasons.append(f"head {pair['head_m']}m < {min_head}m minimum")
@@ -63,6 +69,47 @@ def apply_tier1_filters(pairs_df, params=None):
     failed = result_df[result_df["tier1_status"] == "fail"]
 
     log.info(f"Tier 1 results: {len(passed)} pass, {len(failed)} fail")
+    return result_df
+
+
+def apply_energy_filters(pairs_df):
+    config = load_config()
+    params = config.get("filters", {})
+    physics = config.get("physics", {})
+
+    min_power = params.get("min_power_mw", {})
+    min_energy = params.get("min_energy_mwh", {})
+    duration_hours = physics.get("power_duration_hours", 3)
+    power_col = f"power_mw_{duration_hours}hr"
+
+    log.info(f"Energy filters: min_power={min_power} MW, min_energy={min_energy} MWh")
+
+    results = []
+    for _, pair in pairs_df.iterrows():
+        from ..config import scrub_nan
+        row = scrub_nan(pair.to_dict())
+        status = "pass"
+        reasons = []
+
+        energy = row.get("energy_mwh_standard")
+        power = row.get(power_col)
+
+        if min_energy and energy is not None and energy < min_energy:
+            status = "fail"
+            reasons.append(f"energy {energy:.0f} MWh < {min_energy} MWh minimum")
+
+        if min_power and power is not None and power < min_power:
+            status = "fail"
+            reasons.append(f"power {power:.0f} MW < {min_power} MW minimum")
+
+        row["energy_filter_status"] = status
+        row["energy_filter_reasons"] = "; ".join(reasons) if reasons else "all criteria met"
+        results.append(row)
+
+    result_df = pd.DataFrame(results)
+    passed = result_df[result_df["energy_filter_status"] == "pass"]
+    failed = result_df[result_df["energy_filter_status"] == "fail"]
+    log.info(f"Energy filter results: {len(passed)} pass, {len(failed)} fail")
     return result_df
 
 
