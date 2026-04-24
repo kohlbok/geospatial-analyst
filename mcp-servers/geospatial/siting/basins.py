@@ -180,7 +180,7 @@ def find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params):
 
     dem = patch["data"]
     if np.all(np.isnan(dem)):
-        return []
+        return [], []
 
     filled = fill_sinks(dem)
     labels = label_depressions(dem, filled)
@@ -188,6 +188,7 @@ def find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params):
     pixel_area = _pixel_area_m2(patch, dam_lat)
 
     candidates = []
+    near_misses = []
     unique_labels = np.unique(labels)
     for basin_id in unique_labels:
         if basin_id == 0:
@@ -202,14 +203,17 @@ def find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params):
             continue
         sink_elev = float(finite.min())
         saddle_elev = float(filled[mask][0])
+        depth = saddle_elev - sink_elev
 
-        if saddle_elev - sink_elev < 5:
+        if depth < 5:
+            near_misses.append({"stage_rank": 2, "detail": f"basin depth {depth:.0f}m < 5m min"})
             continue
 
         saddle = _basin_saddle_location(mask, patch, pixel_area, saddle_elev, dem)
         if saddle is None:
             continue
         if saddle["width_m"] > max_saddle_width_m:
+            near_misses.append({"stage_rank": 3, "detail": f"saddle {saddle['width_m']:.0f}m > {max_saddle_width_m:.0f}m limit"})
             continue
 
         full_curve, basin_capped = _area_fill_curve(
@@ -232,6 +236,7 @@ def find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params):
             continue
 
         for direction in ("up", "down"):
+            arrow = "↑" if direction == "up" else "↓"
             saddle_top = saddle_elev + max_wall_height_m
             if direction == "up":
                 fmin = max(sink_elev, dam_elev + min_head_m)
@@ -240,12 +245,16 @@ def find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params):
                 fmin = sink_elev
                 fmax = min(saddle_top, dam_elev - min_head_m)
             if fmax <= fmin + 1.0:
+                near_misses.append({"stage_rank": 4, "detail": f"head range too narrow {arrow} (fill window {fmax - fmin:.0f}m)"})
                 continue
 
             head_at_fmax = (fmax - dam_elev) if direction == "up" else (dam_elev - fmax)
             if head_at_fmax < min_head_m:
+                near_misses.append({"stage_rank": 4, "detail": f"head {head_at_fmax:.0f}m < {min_head_m:.0f}m min {arrow}"})
                 continue
-            if (dist_km * 1000) / head_at_fmax > max_ratio:
+            ratio = (dist_km * 1000) / head_at_fmax
+            if ratio > max_ratio:
+                near_misses.append({"stage_rank": 5, "detail": f"D/H {ratio:.1f} — {dist_km:.1f}km / {head_at_fmax:.0f}m head (limit {max_ratio}) {arrow}"})
                 continue
 
             curve = [s for s in full_curve if fmin <= s["fill_m"] <= fmax]
@@ -272,5 +281,8 @@ def find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params):
                 "basin_capped": basin_capped,
             })
 
+    if not candidates and not near_misses:
+        near_misses.append({"stage_rank": 1, "detail": "no topographic depression found in 20km radius"})
+
     candidates.sort(key=lambda c: -c["max_volume_m3"])
-    return [{k: v for k, v in c.items() if k != "max_volume_m3"} for c in candidates[:max_basins]]
+    return [{k: v for k, v in c.items() if k != "max_volume_m3"} for c in candidates[:max_basins]], near_misses

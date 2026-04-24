@@ -16,7 +16,7 @@ STATUS_COLORS = {
 }
 
 
-def generate_siting_map(dams_df, tier1_results, candidates, phase1_dam_ids):
+def generate_siting_map(dams_df, tier1_results, candidates, phase1_dam_ids, dam_scan_kills=None):
     center_lat = dams_df["lat"].dropna().mean()
     center_lon = dams_df["lon"].dropna().mean()
 
@@ -35,6 +35,8 @@ def generate_siting_map(dams_df, tier1_results, candidates, phase1_dam_ids):
 
     tier1_survivor_ids = {r["dam_id"] for r in tier1_results if r.get("viable_up") or r.get("viable_down")}
     candidate_dam_ids = {c["dam_id"] for c in candidates}
+    t1_by_id = {r["dam_id"]: r for r in tier1_results}
+    scan_kills = dam_scan_kills or {}
 
     def _dam_status(dam_id):
         if dam_id in phase1_dam_ids:
@@ -63,11 +65,22 @@ def generate_siting_map(dams_df, tier1_results, candidates, phase1_dam_ids):
         status = _dam_status(dam_id)
         color = STATUS_COLORS[status]
 
+        kill_line = ""
+        if status == "killed_tier1":
+            from geospatial.visualization.siting_export import _t1_closest_attempt
+            t1 = t1_by_id.get(dam_id, {})
+            detail = _t1_closest_attempt(t1)
+            if detail:
+                kill_line = f"<br><span style='color:#6b7280'>Kill: {detail}</span>"
+        elif status == "killed_scan":
+            detail = scan_kills.get(dam_id, "")
+            if detail:
+                kill_line = f"<br><span style='color:#ea580c'>Kill: {detail}</span>"
         popup_html = (
             f"<b>{dam.get('name', '')}</b><br>"
-            f"ID: {dam_id}<br>"
             f"Elevation: {dam.get('elevation_m', dam.get('elevation_wall_m', 'N/A'))}m<br>"
             f"Status: {status_labels[status]}"
+            f"{kill_line}"
         )
 
         folium.CircleMarker(
@@ -102,7 +115,7 @@ def generate_siting_map(dams_df, tier1_results, candidates, phase1_dam_ids):
         reservoir_radius_m = math.sqrt(footprint_area_m2 / math.pi) if footprint_area_m2 > 0 else 0
 
         dq = cand.get("data_quality", "complete")
-        dq_label = "" if dq == "complete" else f" <span style='color:#D97706;font-weight:bold'>[partial data — existing dam capacity unknown]</span>"
+        dq_label = "" if dq == "complete" else "<br><span style='color:#D97706;font-size:11px'>⚠ Partial data — existing dam capacity unknown</span><br>"
         existing_cap = cand.get("existing_capacity_mcm")
         binding = cand.get("binding_reservoir", "candidate")
         existing_cap_line = (
@@ -112,11 +125,12 @@ def generate_siting_map(dams_df, tier1_results, candidates, phase1_dam_ids):
         )
 
         capped_note = (
-            "<span style='color:#7c3aed;font-weight:bold'>[basin capped — site may have higher potential]</span><br>"
+            "<span style='color:#7c3aed;font-size:11px'>⬆ Basin capped — site may have higher potential</span><br>"
             if cand.get("basin_capped") else ""
         )
         popup_html = (
-            f"<b>#{rank} — {cand.get('dam_name', '')}</b>{dq_label}<br>"
+            f"<b>#{rank} — {cand.get('dam_name', '')}</b><br>"
+            f"{dq_label}"
             f"{capped_note}"
             f"Score: {score:.3f}<br>"
             f"Role: Existing dam = {cand.get('existing_dam_role', '')}<br>"

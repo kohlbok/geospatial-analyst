@@ -708,6 +708,12 @@ def generate_siting_results() -> str:
     with open(candidates_path, "rb") as f:
         candidates = orjson.loads(f.read())
 
+    dam_scan_kills = {}
+    kills_path = DATA_PROCESSED / "siting_scan_kills.json"
+    if kills_path.exists():
+        with open(kills_path, "rb") as f:
+            dam_scan_kills = orjson.loads(f.read())
+
     dams = load_dams()
     if dams is None:
         return safe_dumps({"error": "No data file selected. Call load_dam_registry first."})
@@ -749,13 +755,13 @@ def generate_siting_results() -> str:
     outputs = {}
 
     try:
-        excel_path = generate_siting_excel(candidates, funnel_summary)
+        excel_path = generate_siting_excel(candidates, funnel_summary, dams_df, tier1_results, dam_scan_kills)
         outputs["excel"] = str(excel_path)
     except Exception as e:
         outputs["excel_error"] = str(e)
 
     try:
-        map_path = generate_siting_map(dams_df, tier1_results, candidates, paired_dam_ids)
+        map_path = generate_siting_map(dams_df, tier1_results, candidates, paired_dam_ids, dam_scan_kills)
         outputs["map"] = str(map_path)
     except Exception as e:
         outputs["map_error"] = str(e)

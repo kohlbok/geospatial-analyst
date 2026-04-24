@@ -74,11 +74,15 @@ CANDIDATE_COLUMNS = [
 ]
 
 
-def generate_siting_excel(candidates, funnel_summary):
+def generate_siting_excel(candidates, funnel_summary, dams_df=None, tier1_results=None, dam_scan_kills=None):
     wb = openpyxl.Workbook()
 
     _write_funnel_sheet(wb.active, funnel_summary)
     wb.active.title = "Funnel Summary"
+
+    if dams_df is not None and tier1_results is not None:
+        dam_funnel_sheet = wb.create_sheet("Dam Funnel")
+        _write_dam_funnel_sheet(dam_funnel_sheet, dams_df, tier1_results, candidates, dam_scan_kills or {})
 
     candidates_sheet = wb.create_sheet("Candidates")
     _write_candidates_sheet(candidates_sheet, candidates)
@@ -87,6 +91,108 @@ def generate_siting_excel(candidates, funnel_summary):
     wb.save(str(output_path))
     log.info(f"Saved siting Excel to {output_path}")
     return output_path
+
+
+def _t1_closest_attempt(t1):
+    reason = t1.get("kill_reason")
+    if reason == "ratio_too_high":
+        parts = []
+        h_up = t1.get("max_head_up_m")
+        d_up = t1.get("best_up_dist_km")
+        h_dn = t1.get("max_head_down_m")
+        d_dn = t1.get("best_down_dist_km")
+        if h_up and d_up:
+            parts.append(f"D/H↑ {d_up * 1000 / h_up:.1f} — {d_up:.1f}km / {h_up:.0f}m")
+        if h_dn and d_dn:
+            parts.append(f"D/H↓ {d_dn * 1000 / h_dn:.1f} — {d_dn:.1f}km / {h_dn:.0f}m")
+        return " | ".join(parts) if parts else "ratio too high"
+    if reason == "flat_terrain":
+        return "no 100m+ elevation change within 20km"
+    if reason == "missing_coordinates_or_elevation":
+        return "missing coordinates or elevation"
+    if reason == "no_dem_data":
+        return "no DEM tile available at Tier 1"
+    return reason or ""
+
+
+def _write_dam_funnel_sheet(ws, dams_df, tier1_results, candidates, dam_scan_kills):
+    from openpyxl.styles import Font
+
+    t1_by_id = {r["dam_id"]: r for r in tier1_results}
+    candidate_dam_ids = {c["dam_id"] for c in candidates}
+    best_capex_by_dam = {}
+    for c in candidates:
+        did = c["dam_id"]
+        v = c.get("capex_per_mwh_usd")
+        if v and (did not in best_capex_by_dam or v < best_capex_by_dam[did]):
+            best_capex_by_dam[did] = v
+
+    STAGE_COLORS = {
+        "Candidate": GREEN,
+        "T3": AMBER,
+        "T2": RED,
+        "T1": RED,
+        "Excluded": MUTED,
+    }
+
+    cols = [
+        ("Dam Name", 40),
+        ("Funnel Stage", 26),
+        ("Closest Attempt", 70),
+        ("Best CapEx/MWh ($)", 22),
+    ]
+    for col_idx, (label, width) in enumerate(cols, 1):
+        cell = ws.cell(row=1, column=col_idx, value=label)
+        cell.font = HEADER_FONT
+        cell.fill = HEADER_FILL
+        cell.border = HEADER_BORDER
+        cell.alignment = Alignment(horizontal="center", wrap_text=True)
+        ws.column_dimensions[get_column_letter(col_idx)].width = width
+    ws.row_dimensions[1].height = 30
+
+    for row_idx, (_, dam) in enumerate(dams_df.iterrows(), 2):
+        dam_id = dam.get("id", "")
+        name = dam.get("name", "")
+        fill = STRIPE_FILL if row_idx % 2 == 0 else WHITE_FILL
+
+        if dam_id in candidate_dam_ids:
+            stage = "Candidate"
+            detail = ""
+            capex = best_capex_by_dam.get(dam_id)
+        elif dam_id in dam_scan_kills:
+            kill = dam_scan_kills[dam_id]
+            stage = "T3" if "energy" in kill or "CapEx" in kill or "friction" in kill or "volume" in kill else "T2"
+            detail = kill
+            capex = None
+        elif dam_id in t1_by_id:
+            t1 = t1_by_id[dam_id]
+            reason = t1.get("kill_reason")
+            stage = "T1" if reason else "T2"
+            detail = _t1_closest_attempt(t1) if reason else dam_scan_kills.get(dam_id, "scan not run")
+            capex = None
+        else:
+            stage = "Excluded"
+            detail = "existing PSH or missing coordinates"
+            capex = None
+
+        row = [name, stage, detail, capex]
+        for col_idx, val in enumerate(row, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=val if val is not None else "")
+            cell.font = BODY_FONT
+            cell.fill = fill
+            cell.border = BODY_BORDER
+            cell.alignment = Alignment(
+                horizontal="center" if col_idx in (2, 4) else "left",
+                vertical="center",
+                wrap_text=(col_idx == 3),
+            )
+            if col_idx == 2:
+                color = STAGE_COLORS.get(stage[:2] if stage.startswith("T") else stage, MUTED)
+                cell.font = Font(name="Calibri", size=10, color=color, bold=(stage == "Candidate"))
+            if col_idx == 4 and isinstance(val, (int, float)):
+                battery = 100_000
+                color = GREEN if val < battery else (AMBER if val < battery * 1.5 else RED)
+                cell.font = Font(name="Calibri", size=10, color=color, bold=(val < battery))
 
 
 def _write_funnel_sheet(ws, funnel_summary):

@@ -63,11 +63,15 @@ def tier1_screen(dam, patch, params):
         max_elev = float(np.nanmax(data))
         min_elev = float(np.nanmin(data))
         flat = (max_elev - min_elev) < min_head
-        return {
-            "viable_up": False,
-            "viable_down": False,
-            "kill_reason": "flat_terrain" if flat else "ratio_too_high",
-        }
+        if flat:
+            return {"viable_up": False, "viable_down": False, "kill_reason": "flat_terrain",
+                    "max_head_up_m": round(max_elev - min_elev, 1), "best_up_dist_km": None,
+                    "max_head_down_m": 0.0, "best_down_dist_km": None}
+        best_ratio_head = float(np.nanmax(np.abs(head[valid]))) if valid.any() else 0.0
+        best_ratio_dist = float(dist_km[valid][np.nanargmax(np.abs(head[valid]))]) if valid.any() else 0.0
+        return {"viable_up": False, "viable_down": False, "kill_reason": "ratio_too_high",
+                "max_head_up_m": round(best_ratio_head, 1), "best_up_dist_km": round(best_ratio_dist, 2),
+                "max_head_down_m": 0.0, "best_down_dist_km": None}
 
     result = {"viable_up": viable_up, "viable_down": viable_down, "kill_reason": None}
 
@@ -92,22 +96,29 @@ def tier1_screen(dam, patch, params):
     return result
 
 
+def _closest_attempt(near_misses):
+    if not near_misses:
+        return None
+    return max(near_misses, key=lambda m: m["stage_rank"])["detail"]
+
+
 def scan_and_analyze(dam, patch, tier1_result, params):
     dam_lat = dam.get("lat")
     dam_lon = dam.get("lon")
     dam_elev = _dam_elevation(dam)
     if dam_lat is None or dam_lon is None or dam_elev is None:
-        return [], {"missing_data": 1}
+        return [], {"missing_data": 1}, None
 
-    basins = find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params)
+    basins, basin_near_misses = find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params)
     if not basins:
-        return [], {"no_basins": 1}
+        return [], {"no_basins": 1}, _closest_attempt(basin_near_misses)
 
     max_t3 = params.get("siting", {}).get("max_basins_per_dam_tier3", 3)
     existing_capacity_mcm = dam.get("capacity_mcm")
 
     optimized_viable = []
     kill_reasons = {"no_feasible_optimum": 0}
+    all_near_misses = list(basin_near_misses)
 
     for basin in basins:
         direction = basin["direction"]
@@ -116,9 +127,11 @@ def scan_and_analyze(dam, patch, tier1_result, params):
         if direction == "down" and not tier1_result.get("viable_down"):
             continue
 
-        result = optimize_candidate(basin, dam_elev, existing_capacity_mcm, params)
+        result, cost_kill = optimize_candidate(basin, dam_elev, existing_capacity_mcm, params)
         if result is None:
             kill_reasons["no_feasible_optimum"] += 1
+            if cost_kill:
+                all_near_misses.append(cost_kill)
             continue
 
         candidate = dict(basin)
@@ -142,4 +155,5 @@ def scan_and_analyze(dam, patch, tier1_result, params):
     final.sort(key=lambda c: c.get("capex_per_mwh_usd") or float("inf"))
     if kill_reasons["no_feasible_optimum"] == 0:
         kill_reasons.pop("no_feasible_optimum")
-    return final, kill_reasons
+    closest = None if final else _closest_attempt(all_near_misses)
+    return final, kill_reasons, closest

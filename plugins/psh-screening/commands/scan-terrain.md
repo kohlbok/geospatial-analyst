@@ -16,7 +16,7 @@ This command has explicit checkpoints where you MUST stop and wait for user conf
 
 Remove previous siting results for a fresh run:
 - Delete `output/siting_map.html`, `output/siting_results.xlsx`, `output/siting_profiles.pdf`, `output/siting_tier1.xlsx` if they exist
-- Delete `data/.cache/intermediate/siting_tier1.json`, `siting_candidates.json`, `siting_candidates_partial.json`, `siting_scan.log`, `siting_scan.pid` if they exist
+- Delete `data/.cache/intermediate/siting_tier1.json`, `siting_candidates.json`, `siting_candidates_partial.json`, `siting_scan_kills.json`, `siting_scan.log`, `siting_scan.pid` if they exist
 - Do NOT delete `data/.cache/srtm/` (expensive SRTM downloads, reusable across runs)
 - Do NOT delete `data/.cache/intermediate/scored_pairs.json` (needed to identify dams already paired in the existing-pair screen)
 
@@ -158,8 +158,8 @@ Call `generate_siting_results` MCP tool.
 Report all output files:
 ```
 OUTPUT FILES
-  siting_results.xlsx     -- Funnel summary + full candidate table sorted by composite score
-  siting_map.html         -- Interactive map: dam status colors + candidate pins with basin footprints
+  siting_results.xlsx     -- Funnel Summary + Dam Funnel (all 227 dams with kill reasons) + Candidates
+  siting_map.html         -- Interactive map: dam status colors + kill reason in popup + candidate pins
   siting_profiles.pdf     -- Terrain profiles for top 15 candidates
 ```
 

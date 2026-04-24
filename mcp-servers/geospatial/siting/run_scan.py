@@ -32,11 +32,13 @@ partial_path = DATA_PROCESSED / "siting_candidates_partial.json"
 pid_path = DATA_PROCESSED / "siting_scan.pid"
 
 all_candidates = []
+dam_scan_kills: dict = {}
 done_ids: set = set()
 if partial_path.exists():
     with open(partial_path, "rb") as f:
         saved = orjson.loads(f.read())
     all_candidates = saved.get("candidates", [])
+    dam_scan_kills = saved.get("dam_scan_kills", {})
     done_ids = set(saved.get("done_ids", []))
     print(f"Resuming: {len(done_ids)} dams already done, {len(all_candidates)} candidates so far", flush=True)
 
@@ -57,21 +59,24 @@ for i, t1 in enumerate(survivors):
     patch = load_dem_patch(float(dam["lat"]), float(dam["lon"]), search_radius_km, resolution_m=resolution_m)
     if patch is None:
         all_kill_reasons["no_dem"] = all_kill_reasons.get("no_dem", 0) + 1
+        dam_scan_kills[dam_id] = "no DEM tile available"
         done_ids.add(dam_id)
         continue
 
-    candidates, kill_reasons = scan_and_analyze(dam, patch, t1, config)
+    candidates, kill_reasons, closest_attempt = scan_and_analyze(dam, patch, t1, config)
     for k, v in kill_reasons.items():
         all_kill_reasons[k] = all_kill_reasons.get(k, 0) + v
 
     if candidates:
         all_candidates.extend(candidates)
         print(f"  -> {len(candidates)} candidates", flush=True)
+    elif closest_attempt:
+        dam_scan_kills[dam_id] = closest_attempt
 
     done_ids.add(dam_id)
     with open(partial_path, "wb") as f:
         f.write(orjson.dumps(
-            {"candidates": all_candidates, "done_ids": list(done_ids)},
+            {"candidates": all_candidates, "dam_scan_kills": dam_scan_kills, "done_ids": list(done_ids)},
             option=orjson.OPT_SERIALIZE_NUMPY,
         ))
 
@@ -84,6 +89,9 @@ with open(DATA_PROCESSED / "siting_candidates.json", "wb") as f:
         all_candidates,
         option=orjson.OPT_INDENT_2 | orjson.OPT_SERIALIZE_NUMPY,
     ))
+
+with open(DATA_PROCESSED / "siting_scan_kills.json", "wb") as f:
+    f.write(orjson.dumps(dam_scan_kills, option=orjson.OPT_INDENT_2))
 
 if partial_path.exists():
     partial_path.unlink()

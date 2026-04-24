@@ -56,6 +56,12 @@ def optimize_candidate(basin, dam_elev, existing_capacity_mcm, params):
     diameters = np.linspace(d_range[0], d_range[1], d_samples)
 
     best = None
+    _best_friction_pct_at_max_d = float("inf")
+    _best_energy_past_friction = 0.0
+    _best_head_for_energy = 0.0
+    _best_vol_for_energy = 0.0
+    max_d = float(d_range[1])
+
     for sample in curve:
         fill_m = float(sample["fill_m"])
         gross_volume_m3 = float(sample["volume_m3"])
@@ -72,10 +78,17 @@ def optimize_candidate(basin, dam_elev, existing_capacity_mcm, params):
 
         for D in diameters:
             friction_loss = darcy_f * penstock_length_m * 8 * (flow ** 2) / (g * (math.pi ** 2) * (D ** 5))
+            if D >= max_d - 0.01:
+                frac = 100.0 * friction_loss / head_gross
+                _best_friction_pct_at_max_d = min(_best_friction_pct_at_max_d, frac)
             if friction_loss >= max_friction_frac * head_gross:
                 continue
             net_head = head_gross - friction_loss
             energy_mwh = rho * g * net_head * usable_volume_m3 * efficiency / 3_600_000_000
+            if energy_mwh > _best_energy_past_friction:
+                _best_energy_past_friction = energy_mwh
+                _best_head_for_energy = head_gross
+                _best_vol_for_energy = usable_volume_m3 / 1e6
             if energy_mwh < min_energy_mwh:
                 continue
             penstock_usd = base_rate * (penstock_length_m / 1000.0) * D
@@ -108,7 +121,16 @@ def optimize_candidate(basin, dam_elev, existing_capacity_mcm, params):
                 }
 
     if best is None:
-        return None
+        if _best_energy_past_friction > 0:
+            kill = (
+                f"energy {_best_energy_past_friction:.0f} MWh < {min_energy_mwh:.0f} MWh min "
+                f"(head {_best_head_for_energy:.0f}m, vol {_best_vol_for_energy:.2f} MCM)"
+            )
+            return None, {"stage_rank": 8, "detail": kill}
+        if _best_friction_pct_at_max_d < float("inf"):
+            kill = f"friction {_best_friction_pct_at_max_d:.1f}% at D={max_d:.0f}m (limit {max_friction_frac * 100:.0f}%)"
+            return None, {"stage_rank": 7, "detail": kill}
+        return None, {"stage_rank": 6, "detail": "zero usable volume"}
 
     dh_ratio = penstock_length_m / best["head_m"] if best["head_m"] > 0 else float("inf")
     best["penstock_length_m"] = penstock_length_m
@@ -124,7 +146,8 @@ def optimize_candidate(basin, dam_elev, existing_capacity_mcm, params):
     best["energy_mwh_8hr"] = min(best["energy_mwh"], target_power_mw * 8)
 
     if best["total_capex_usd"] > max_capex and not best["marginal_flag"]:
-        return None
+        kill = f"CapEx ${best['total_capex_usd'] / 1e6:.0f}M > ${max_capex / 1e6:.0f}M cap"
+        return None, {"stage_rank": 9, "detail": kill}
 
     for k in [
         "optimal_fill_m", "optimal_diameter_m", "head_m", "net_head_m",
@@ -141,4 +164,4 @@ def optimize_candidate(basin, dam_elev, existing_capacity_mcm, params):
     ]:
         if best.get(k) is not None:
             best[k] = round(best[k])
-    return best
+    return best, None
