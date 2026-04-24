@@ -70,6 +70,7 @@ CANDIDATE_COLUMNS = [
     ("passes_battery_test", "Beats Battery", 16),
     ("abdelmoumen_flag", "Abdelmoumen Flag", 19),
     ("marginal_flag", "Marginal", 13),
+    ("basin_capped", "Basin Capped", 14),
 ]
 
 

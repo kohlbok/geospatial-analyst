@@ -117,11 +117,11 @@ def _basin_sink_latlon(mask, dem, patch):
 def _area_fill_curve(mask, dem, sink_elev, saddle_elev, pixel_area_m2, n_samples,
                      max_wall_height_m=0.0, max_fill_depth_m=None, max_footprint_area_m2=None):
     if saddle_elev <= sink_elev:
-        return []
+        return [], False
     basin_dem = dem[mask]
     basin_dem = basin_dem[~np.isnan(basin_dem)]
     if len(basin_dem) == 0:
-        return []
+        return [], False
     levels = list(np.linspace(sink_elev, saddle_elev, max(n_samples, 2)))
     if max_wall_height_m > 0:
         top = saddle_elev + max_wall_height_m
@@ -153,11 +153,18 @@ def _area_fill_curve(mask, dem, sink_elev, saddle_elev, pixel_area_m2, n_samples
             "volume_m3": volume_m3,
         })
 
+    capped = False
     if max_fill_depth_m is not None:
-        samples = [s for s in samples if (s["fill_m"] - sink_elev) <= max_fill_depth_m]
+        filtered = [s for s in samples if (s["fill_m"] - sink_elev) <= max_fill_depth_m]
+        if len(filtered) < len(samples):
+            capped = True
+        samples = filtered
     if max_footprint_area_m2 is not None:
-        samples = [s for s in samples if s["area_m2"] <= max_footprint_area_m2]
-    return samples
+        filtered = [s for s in samples if s["area_m2"] <= max_footprint_area_m2]
+        if len(filtered) < len(samples):
+            capped = True
+        samples = filtered
+    return samples, capped
 
 
 def find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params):
@@ -205,7 +212,7 @@ def find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params):
         if saddle["width_m"] > max_saddle_width_m:
             continue
 
-        full_curve = _area_fill_curve(
+        full_curve, basin_capped = _area_fill_curve(
             mask, dem,
             sink_elev=sink_elev, saddle_elev=saddle_elev,
             pixel_area_m2=pixel_area, n_samples=n_samples,
@@ -262,6 +269,7 @@ def find_candidate_basins(patch, dam_lat, dam_lon, dam_elev, params):
                 "area_fill_curve": curve,
                 "max_volume_m3": max_volume_m3,
                 "existing_dam_role": "lower" if direction == "up" else "upper",
+                "basin_capped": basin_capped,
             })
 
     candidates.sort(key=lambda c: -c["max_volume_m3"])

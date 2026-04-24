@@ -111,8 +111,13 @@ def generate_siting_map(dams_df, tier1_results, candidates, phase1_dam_ids):
             "Existing dam capacity: unknown (assumed >= candidate)<br>"
         )
 
+        capped_note = (
+            "<span style='color:#7c3aed;font-weight:bold'>[basin capped — site may have higher potential]</span><br>"
+            if cand.get("basin_capped") else ""
+        )
         popup_html = (
             f"<b>#{rank} — {cand.get('dam_name', '')}</b>{dq_label}<br>"
+            f"{capped_note}"
             f"Score: {score:.3f}<br>"
             f"Role: Existing dam = {cand.get('existing_dam_role', '')}<br>"
             f"Head: {cand.get('head_m', 0):.0f}m | Distance: {cand.get('distance_km', 0):.1f}km<br>"

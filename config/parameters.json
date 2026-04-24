@@ -93,7 +93,7 @@
     "max_basins_per_dam_tier3": {"value": 3, "description": "Maximum number of optimized candidates per dam per direction after Tier 3. Ranked by CapEx/MWh. Feeds into: candidate table."},
     "max_saddle_width_m": {"value": 500, "description": "Maximum saddle width (m) for a basin to be considered. Wider saddles require too much dam wall to close economically. Feeds into: Tier 2 kill."},
     "max_wall_height_m": {"value": 30, "description": "Maximum additional fill above the natural saddle elevation (m). Models a constructed dam wall extending the natural basin. Wall cost is amortized into reservoir_usd_per_mcm."},
-    "max_fill_depth_m": {"value": 30, "description": "Maximum water depth above the basin's natural sink (m). Caps the constructed-reservoir model. Tayeb guidance: upper reservoirs are 25-30m embankments above natural ground (Abdelmoumen operates 1293-1316m = 23m). Feeds into: Tier 3 fill-curve cap."},
+    "max_fill_depth_m": {"value": 50, "description": "Maximum water depth above the basin's natural sink (m). Caps fill curve but keeps basin (see basin_capped flag). Tayeb guidance: Abdelmoumen operates 23m; 50m is a reasonable upper screening bound for embankment dams. Feeds into: Tier 3 fill-curve cap."},
     "max_footprint_area_m2": {"value": 280000, "description": "Maximum submerged footprint area (m2). ~600m equivalent diameter. Tayeb guidance: constructed reservoirs typically 200-500m diameter, upper bound 400-600m. Feeds into: Tier 3 fill-curve cap."},
     "fill_depth_samples": {"value": 20, "description": "Number of fill-level samples between sink and saddle+wall for the area-vs-fill curve per basin. Higher = more accurate optimization but more compute. Feeds into: Tier 3 per-basin volume curve."},
 
