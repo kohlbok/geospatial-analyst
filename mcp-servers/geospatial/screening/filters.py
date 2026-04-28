@@ -1,9 +1,7 @@
 import logging
 
-import geopandas as gpd
 import pandas as pd
 import requests
-from shapely.geometry import LineString
 
 from ..config import load_config, DATA_RAW, get_bbox
 
@@ -114,6 +112,8 @@ def apply_energy_filters(pairs_df):
 
 
 def apply_tier2_filters(pairs_df, dam_registry=None):
+    from shapely.geometry import LineString
+
     config = load_config()
     params = config.get("screening", {})
     buffer_km = params.get("protected_area_buffer_km", 1)
@@ -164,6 +164,7 @@ def _load_protected_areas():
         shp_files = list(wdpa_dir.rglob("*.shp"))
         if shp_files:
             try:
+                import geopandas as gpd
                 lat_min, lat_max, lon_min, lon_max = get_bbox()
                 gdf = gpd.read_file(shp_files[0], bbox=(lon_min, lat_min, lon_max, lat_max))
                 log.info(f"Loaded {len(gdf)} protected areas from WDPA")
@@ -217,6 +218,7 @@ def _fetch_protected_areas_osm():
                         pass
 
         if geometries:
+            import geopandas as gpd
             gdf = gpd.GeoDataFrame(geometry=geometries, crs="EPSG:4326")
             log.info(f"Loaded {len(gdf)} protected areas from OSM")
             return gdf

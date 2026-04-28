@@ -63,7 +63,6 @@ import sys
 failures = []
 packages = [
     ('geopandas', 'geopandas'),
-    ('rasterio', 'rasterio'),
     ('shapely', 'shapely'),
     ('pyogrio', 'pyogrio'),
     ('folium', 'folium'),

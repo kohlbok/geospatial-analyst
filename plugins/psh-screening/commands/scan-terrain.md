@@ -2,6 +2,26 @@
 
 Scan terrain around existing dams to find new reservoir sites for pumped storage hydropower (greenfield siting).
 
+## Platform
+
+Before doing anything else, run `uname` once to decide which interface to use for the rest of this command:
+- Output starts with `Darwin` or `Linux`: use the `mcp__geospatial__*` tools as written below.
+- Output contains `MINGW`, `MSYS`, `CYGWIN`, `Windows_NT`, or `uname` is not found: the MCP server is unreliable on Windows. Use the CLI fallback instead. Every MCP tool below has an exact CLI equivalent:
+
+  ```
+  .venv/Scripts/python.exe mcp-servers/geospatial/cli.py <tool_name> [--arg value ...]
+  ```
+
+  Subcommand names match MCP tool names exactly. Keyword args become `--name value` flags. JSON output is printed to stdout — parse it the same as the MCP response. Examples:
+  - `mcp__geospatial__cleanup(targets="siting")` → `... cli.py cleanup --targets siting`
+  - `mcp__geospatial__tier1_elevation_screen()` → `... cli.py tier1_elevation_screen`
+  - `mcp__geospatial__siting_scan()` → `... cli.py siting_scan`
+  - `mcp__geospatial__siting_scan_status()` → `... cli.py siting_scan_status`
+
+  The Monitor pattern in Step 4 still works on Windows: the background scan writes to `data/.cache/intermediate/siting_scan.log` regardless of how it was launched, so tail that file the same way.
+
+  For each step below, translate every `mcp__geospatial__<tool>(args...)` call into the equivalent CLI invocation.
+
 ## Skills
 
 Load: methodology, constraints
@@ -14,11 +34,7 @@ This command has explicit checkpoints where you MUST stop and wait for user conf
 
 ### Step 0: Clean Slate
 
-Remove previous siting results for a fresh run:
-- Delete `output/siting_map.html`, `output/siting_results.xlsx`, `output/siting_profiles.pdf`, `output/siting_tier1.xlsx` if they exist
-- Delete `data/.cache/intermediate/siting_tier1.json`, `siting_candidates.json`, `siting_candidates_partial.json`, `siting_scan_kills.json`, `siting_scan.log`, `siting_scan.pid` if they exist
-- Do NOT delete `data/.cache/srtm/` (expensive SRTM downloads, reusable across runs)
-- Do NOT delete `data/.cache/intermediate/scored_pairs.json` (needed to identify dams already paired in the existing-pair screen)
+Call the `cleanup` MCP tool with `targets="siting"`. This removes only siting-specific outputs and intermediates (siting_map.html, siting_results.xlsx, siting_profiles.pdf, siting_tier1.xlsx, siting_tier1.json, siting_candidates*.json, siting_scan*.{log,pid}) and preserves `data/.cache/srtm/` and `data/.cache/intermediate/scored_pairs.json` (needed to identify dams already paired in the existing-pair screen).
 
 ### Step 1: Load Data
 

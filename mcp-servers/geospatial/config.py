@@ -24,6 +24,8 @@ _config_cache = None
 _boundary_cache = None
 _active_file = None
 
+ACTIVE_FILE_STATE = DATA_CACHE / "active_file.txt"
+
 NATURAL_EARTH_URL = "https://naciscdn.org/naturalearth/110m/cultural/ne_110m_admin_0_countries.zip"
 
 
@@ -118,6 +120,11 @@ def list_data_files():
     return sorted(files)
 
 
+def _persist_active(path):
+    ACTIVE_FILE_STATE.parent.mkdir(parents=True, exist_ok=True)
+    ACTIVE_FILE_STATE.write_text(str(path), encoding="utf-8")
+
+
 def set_active_file(filename):
     global _active_file
     path = DATA_DIR / filename
@@ -128,12 +135,19 @@ def set_active_file(filename):
         if not json_path.exists():
             return "needs_parsing"
         _active_file = json_path
+        _persist_active(json_path)
         return json_path
     _active_file = path
+    _persist_active(path)
     return path
 
 
 def get_active_file():
+    global _active_file
+    if _active_file is None and ACTIVE_FILE_STATE.exists():
+        candidate = Path(ACTIVE_FILE_STATE.read_text(encoding="utf-8").strip())
+        if candidate.exists():
+            _active_file = candidate
     return _active_file
 
 
@@ -165,13 +179,15 @@ def _save_json(dams, path):
 
 
 def load_dams():
-    if _active_file is None or not _active_file.exists():
+    active = get_active_file()
+    if active is None or not active.exists():
         return None
-    with open(_active_file, "rb") as f:
+    with open(active, "rb") as f:
         return orjson.loads(f.read())
 
 
 def save_dams(dams):
-    if _active_file is None:
+    active = get_active_file()
+    if active is None:
         return
-    _save_json(dams, _active_file)
+    _save_json(dams, active)

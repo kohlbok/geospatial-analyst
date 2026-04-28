@@ -2,6 +2,25 @@
 
 Screen all dams for pumped storage hydropower (PSH) potential.
 
+## Platform
+
+Before doing anything else, run `uname` once to decide which interface to use for the rest of this command:
+- Output starts with `Darwin` or `Linux`: use the `mcp__geospatial__*` tools as written below.
+- Output contains `MINGW`, `MSYS`, `CYGWIN`, `Windows_NT`, or `uname` is not found: the MCP server is unreliable on Windows. Use the CLI fallback instead. Every MCP tool below has an exact CLI equivalent:
+
+  ```
+  .venv/Scripts/python.exe mcp-servers/geospatial/cli.py <tool_name> [--arg value ...]
+  ```
+
+  Subcommand names match MCP tool names exactly. Keyword args become `--name value` flags. JSON output is printed to stdout — parse it the same as the MCP response. Examples:
+  - `mcp__geospatial__cleanup(targets="screen")` → `... cli.py cleanup --targets screen`
+  - `mcp__geospatial__load_dam_registry(file="dams.json")` → `... cli.py load_dam_registry --file dams.json`
+  - `mcp__geospatial__generate_pairs()` → `... cli.py generate_pairs`
+  - `mcp__geospatial__screen_pairs()` → `... cli.py screen_pairs`
+  - `mcp__geospatial__generate_executive_summary(expert_review='[{...}]')` → `... cli.py generate_executive_summary --expert_review '[{...}]'`
+
+  For each step below, translate every `mcp__geospatial__<tool>(args...)` call into the equivalent CLI invocation.
+
 ## Skills
 
 Load: methodology, constraints
@@ -14,10 +33,7 @@ This command has explicit checkpoints where you MUST stop and wait for user conf
 
 ### Step 0: Clean Slate
 
-Remove previous results for a fresh run:
-- Delete everything in `output/` (old results, maps, PDFs)
-- Delete `data/.cache/intermediate/` (stale screening intermediates)
-- Do NOT delete `data/.cache/srtm/` or `data/.cache/raw/` (expensive downloads, reusable)
+Call the `cleanup` MCP tool with `targets="screen"`. This removes everything in `output/` and `data/.cache/intermediate/` while preserving `data/.cache/srtm/` and `data/.cache/raw/` (expensive downloads, reusable).
 
 ### Step 1: Load Data
 

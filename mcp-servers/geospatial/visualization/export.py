@@ -194,9 +194,9 @@ NUMBER_FORMATS = {
 }
 
 
-def generate_clean_outputs(dam_registry, scored_pairs, all_pairs=None):
+def generate_clean_outputs(dam_registry, scored_pairs, all_pairs=None, filtered_pairs=None):
     paths = {}
-    paths["excel"] = _export_excel(dam_registry, scored_pairs, all_pairs)
+    paths["excel"] = _export_excel(dam_registry, scored_pairs, all_pairs, filtered_pairs)
     paths["json"] = _export_json(dam_registry, scored_pairs)
     paths["kml_3d"] = _export_3d_kml(dam_registry, scored_pairs)
     paths["geojson"] = _export_geojson(dam_registry, scored_pairs)
@@ -546,7 +546,7 @@ DH_NUMBER_FORMATS = {
 }
 
 
-def _build_top20_dh_sheet(wb, all_pairs, scored_pairs):
+def _build_top20_dh_sheet(wb, all_pairs, scored_pairs, filtered_pairs=None):
     if all_pairs is None or len(all_pairs) == 0:
         return
 
@@ -555,11 +555,14 @@ def _build_top20_dh_sheet(wb, all_pairs, scored_pairs):
         for _, r in scored_pairs.iterrows():
             passed_keys.add((r.get("upper_dam_id"), r.get("lower_dam_id")))
 
-    from ..config import DATA_PROCESSED
     filtered_reasons = {}
-    filtered_path = DATA_PROCESSED / "filtered_pairs.json"
-    if filtered_path.exists():
-        fp = pd.read_json(filtered_path)
+    fp = filtered_pairs
+    if fp is None:
+        from ..config import DATA_PROCESSED
+        filtered_path = DATA_PROCESSED / "filtered_pairs.json"
+        if filtered_path.exists():
+            fp = pd.read_json(filtered_path)
+    if fp is not None:
         for _, r in fp.iterrows():
             key = (r.get("upper_dam_id"), r.get("lower_dam_id"))
             reasons = r.get("tier1_reasons") or r.get("energy_filter_reasons") or ""
@@ -617,7 +620,7 @@ def _build_top20_dh_sheet(wb, all_pairs, scored_pairs):
     ws.sheet_view.showGridLines = False
 
 
-def _export_excel(dam_registry, scored_pairs, all_pairs=None):
+def _export_excel(dam_registry, scored_pairs, all_pairs=None, filtered_pairs=None):
     output_path = OUTPUT_DIR / "results.xlsx"
 
     dam_col_defs = _build_dam_col_defs(dam_registry.columns.tolist())
@@ -643,7 +646,7 @@ def _export_excel(dam_registry, scored_pairs, all_pairs=None):
         wb = writer.book
 
         _build_summary_sheet(wb, dam_registry, scored_pairs)
-        _build_top20_dh_sheet(wb, all_pairs, scored_pairs)
+        _build_top20_dh_sheet(wb, all_pairs, scored_pairs, filtered_pairs)
 
         ws_dam = wb["Dam Registry"]
         _style_data_sheet(ws_dam, dam_col_defs)
@@ -675,7 +678,7 @@ def _export_json(dam_registry, scored_pairs):
         "pairs": pairs_list,
     }
 
-    with open(output_path, "w") as f:
+    with open(output_path, "w", encoding="utf-8") as f:
         f.write(safe_dumps(result, indent=2))
     log.info(f"Saved JSON to {output_path}")
     return str(output_path)
@@ -770,7 +773,7 @@ def _export_geojson(dam_registry, scored_pairs):
 
     geojson = {"type": "FeatureCollection", "features": features}
     geojson_path = OUTPUT_DIR / "pairs.geojson"
-    with open(geojson_path, "w") as f:
+    with open(geojson_path, "w", encoding="utf-8") as f:
         f.write(safe_dumps(geojson, indent=2))
     log.info(f"Saved GeoJSON to {geojson_path}")
     return str(geojson_path)

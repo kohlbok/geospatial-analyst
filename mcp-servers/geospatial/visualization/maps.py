@@ -10,7 +10,7 @@ from ..config import OUTPUT_DIR, DATA_DIR, load_config
 log = logging.getLogger(__name__)
 
 
-def generate_combined_map(dam_registry, scored_pairs_df=None, all_pairs_df=None):
+def generate_combined_map(dam_registry, scored_pairs_df=None, all_pairs_df=None, filtered_pairs_df=None):
     center_lat = dam_registry["lat"].dropna().mean()
     center_lon = dam_registry["lon"].dropna().mean()
 
@@ -143,11 +143,14 @@ def generate_combined_map(dam_registry, scored_pairs_df=None, all_pairs_df=None)
             _add_pair_panel(m, pair_panel_items)
 
     if all_pairs_df is not None and len(all_pairs_df) > 0:
-        from ..config import DATA_PROCESSED
         fail_reasons = {}
-        filtered_path = DATA_PROCESSED / "filtered_pairs.json"
-        if filtered_path.exists():
-            fp = pd.read_json(filtered_path)
+        fp = filtered_pairs_df
+        if fp is None:
+            from ..config import DATA_PROCESSED
+            filtered_path = DATA_PROCESSED / "filtered_pairs.json"
+            if filtered_path.exists():
+                fp = pd.read_json(filtered_path)
+        if fp is not None:
             for _, r in fp.iterrows():
                 key = (r.get("upper_dam_id"), r.get("lower_dam_id"))
                 reasons = r.get("tier1_reasons") or ""

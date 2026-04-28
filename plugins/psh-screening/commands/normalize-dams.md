@@ -2,6 +2,23 @@
 
 Transform any data file in `data/` into the standard format for screening.
 
+## Platform
+
+Before doing anything else, run `uname` once to decide which interface to use for the rest of this command:
+- Output starts with `Darwin` or `Linux`: use the `mcp__geospatial__*` tools as written below.
+- Output contains `MINGW`, `MSYS`, `CYGWIN`, `Windows_NT`, or `uname` is not found: the MCP server is unreliable on Windows. Use the CLI fallback instead. Every MCP tool below has an exact CLI equivalent:
+
+  ```
+  .venv/Scripts/python.exe mcp-servers/geospatial/cli.py <tool_name> [--arg value ...]
+  ```
+
+  Subcommand names match MCP tool names exactly. Keyword args become `--name value` flags. JSON output is printed to stdout — parse it the same as the MCP response. Examples:
+  - `mcp__geospatial__load_dam_registry(file="dams.xlsx")` → `... cli.py load_dam_registry --file dams.xlsx`
+  - `mcp__geospatial__inspect_file(path="data/dams.xlsx")` → `... cli.py inspect_file --path data/dams.xlsx`
+  - `mcp__geospatial__parse_tabular(path=..., column_mapping='{"name":"Dam"}', output_name="dams")` → `... cli.py parse_tabular --path ... --column_mapping '{"name":"Dam"}' --output_name dams`
+
+  For each step below, translate every `mcp__geospatial__<tool>(args...)` call into the equivalent CLI invocation.
+
 ## Skills
 
 Load: data-collection-workflow

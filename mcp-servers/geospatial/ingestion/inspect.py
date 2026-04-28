@@ -107,7 +107,7 @@ def _inspect_shapefile(path, max_rows):
 
 
 def _inspect_json(path, max_rows):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         data = json.load(f)
 
     if isinstance(data, list):

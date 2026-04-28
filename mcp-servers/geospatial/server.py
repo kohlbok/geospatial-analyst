@@ -23,6 +23,116 @@ log = logging.getLogger("psh-screening")
 mcp = FastMCP("PSH Screening")
 
 
+_pairs_cache: dict = {"all_pairs": None, "filtered_pairs": None, "scored_pairs": None}
+
+
+def _cache_get(key, path):
+    df = _pairs_cache.get(key)
+    if df is not None:
+        return df
+    if path.exists():
+        import pandas as pd
+        df = pd.read_json(path)
+        _pairs_cache[key] = df
+        return df
+    return None
+
+
+def _cache_set(key, df):
+    _pairs_cache[key] = df
+
+
+def _cache_clear():
+    for k in _pairs_cache:
+        _pairs_cache[k] = None
+
+
+def _pid_alive(pid):
+    import os
+    if os.name == "nt":
+        import ctypes
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        STILL_ACTIVE = 259
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not handle:
+            return False
+        try:
+            exit_code = ctypes.c_ulong()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                return False
+            return exit_code.value == STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+@mcp.tool()
+def cleanup(targets: str = "screen") -> str:
+    """Remove generated outputs and intermediates for a fresh run.
+    targets: "screen" clears output/ and intermediate/. "siting" clears siting outputs and intermediates only. "all" does both. Never touches data/.cache/srtm or data/.cache/raw."""
+    import shutil
+    from geospatial.config import OUTPUT_DIR, DATA_PROCESSED
+
+    removed = []
+    errors = []
+
+    def _rm(path):
+        try:
+            if path.is_dir():
+                shutil.rmtree(path)
+                removed.append(f"dir: {path}")
+            elif path.exists():
+                path.unlink()
+                removed.append(f"file: {path}")
+        except Exception as e:
+            errors.append(f"{path}: {e}")
+
+    target = targets.lower().strip()
+
+    if target in ("screen", "all"):
+        if OUTPUT_DIR.exists():
+            for child in OUTPUT_DIR.iterdir():
+                _rm(child)
+        if DATA_PROCESSED.exists():
+            for child in DATA_PROCESSED.iterdir():
+                _rm(child)
+
+    if target in ("siting", "all"):
+        siting_outputs = [
+            OUTPUT_DIR / "siting_map.html",
+            OUTPUT_DIR / "siting_results.xlsx",
+            OUTPUT_DIR / "siting_profiles.pdf",
+            OUTPUT_DIR / "siting_tier1.xlsx",
+        ]
+        siting_intermediates = [
+            DATA_PROCESSED / "siting_tier1.json",
+            DATA_PROCESSED / "siting_candidates.json",
+            DATA_PROCESSED / "siting_candidates_partial.json",
+            DATA_PROCESSED / "siting_scan_kills.json",
+            DATA_PROCESSED / "siting_scan.log",
+            DATA_PROCESSED / "siting_scan.pid",
+        ]
+        for path in siting_outputs + siting_intermediates:
+            if path.exists():
+                _rm(path)
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
+    _cache_clear()
+
+    return safe_dumps({
+        "status": "ok",
+        "target": target,
+        "removed_count": len(removed),
+        "errors": errors,
+    })
+
+
 @mcp.tool()
 def load_dam_registry(file: str = "") -> str:
     """Load a dam registry from the data/ directory. Pass a filename to select it, or omit to list available files."""
@@ -36,6 +146,7 @@ def load_dam_registry(file: str = "") -> str:
     result = set_active_file(file)
     if result is None:
         return safe_dumps({"error": f"File '{file}' not found in data/"})
+    _cache_clear()
     if result == "needs_parsing":
         return safe_dumps({
             "status": "needs_parsing",
@@ -80,7 +191,8 @@ def generate_pairs() -> str:
 
     pairs = do_generate(registry)
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
-    pairs.to_json(DATA_PROCESSED / "all_pairs.json", orient="records", indent=2, default_handler=str)
+    pairs.to_json(DATA_PROCESSED / "all_pairs.json", orient="records", default_handler=str)
+    _cache_set("all_pairs", pairs)
 
     return safe_dumps({
         "status": "ok",
@@ -93,17 +205,15 @@ def generate_pairs() -> str:
 @mcp.tool()
 def screen_pairs() -> str:
     """Apply screening filters and score all pairs. Returns ranked list."""
-    import pandas as pd
     from geospatial.screening.filters import apply_tier1_filters, apply_energy_filters
     from geospatial.scoring.energy import calculate_all_energies
     from geospatial.scoring.cost import calculate_all_costs
     from geospatial.scoring.composite import score_pairs as do_score
 
-    pairs_path = DATA_PROCESSED / "all_pairs.json"
-    if not pairs_path.exists():
+    pairs = _cache_get("all_pairs", DATA_PROCESSED / "all_pairs.json")
+    if pairs is None:
         return safe_dumps({"error": "Run generate_pairs first"})
 
-    pairs = pd.read_json(pairs_path)
     config = load_config()
 
     filtered = apply_tier1_filters(pairs)
@@ -122,8 +232,10 @@ def screen_pairs() -> str:
     with_costs = calculate_all_costs(viable_energy)
     scored = do_score(with_costs)
 
-    scored.to_json(DATA_PROCESSED / "scored_pairs.json", orient="records", indent=2, default_handler=str)
-    filtered.to_json(DATA_PROCESSED / "filtered_pairs.json", orient="records", indent=2, default_handler=str)
+    scored.to_json(DATA_PROCESSED / "scored_pairs.json", orient="records", default_handler=str)
+    filtered.to_json(DATA_PROCESSED / "filtered_pairs.json", orient="records", default_handler=str)
+    _cache_set("scored_pairs", scored)
+    _cache_set("filtered_pairs", filtered)
 
     top = scored.head(10)
     top_list = []
@@ -150,14 +262,12 @@ def generate_map() -> str:
     if dams is None:
         return safe_dumps({"error": "No data file selected. Call load_dam_registry first."})
 
-    scored_path = DATA_PROCESSED / "scored_pairs.json"
-    scored = pd.read_json(scored_path) if scored_path.exists() else None
-
-    all_pairs_path = DATA_PROCESSED / "all_pairs.json"
-    all_pairs = pd.read_json(all_pairs_path) if all_pairs_path.exists() else None
+    scored = _cache_get("scored_pairs", DATA_PROCESSED / "scored_pairs.json")
+    all_pairs = _cache_get("all_pairs", DATA_PROCESSED / "all_pairs.json")
+    filtered = _cache_get("filtered_pairs", DATA_PROCESSED / "filtered_pairs.json")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    map_path = generate_combined_map(pd.DataFrame(dams), scored, all_pairs)
+    map_path = generate_combined_map(pd.DataFrame(dams), scored, all_pairs, filtered)
     return safe_dumps({"status": "ok", "map": str(map_path)})
 
 
@@ -185,16 +295,15 @@ def generate_results() -> str:
     if dams is None:
         return safe_dumps({"error": "No data file selected. Call load_dam_registry first."})
 
-    scored_path = DATA_PROCESSED / "scored_pairs.json"
-    if not scored_path.exists():
+    scored = _cache_get("scored_pairs", DATA_PROCESSED / "scored_pairs.json")
+    if scored is None:
         return safe_dumps({"error": "Run screen_pairs first"})
 
-    scored = pd.read_json(scored_path)
-    all_pairs_path = DATA_PROCESSED / "all_pairs.json"
-    all_pairs = pd.read_json(all_pairs_path) if all_pairs_path.exists() else None
+    all_pairs = _cache_get("all_pairs", DATA_PROCESSED / "all_pairs.json")
+    filtered = _cache_get("filtered_pairs", DATA_PROCESSED / "filtered_pairs.json")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    paths = generate_clean_outputs(pd.DataFrame(dams), scored, all_pairs)
+    paths = generate_clean_outputs(pd.DataFrame(dams), scored, all_pairs, filtered)
     return safe_dumps({"status": "ok", "outputs": paths})
 
 
@@ -250,7 +359,7 @@ def generate_executive_summary(expert_review: str) -> str:
     }
 
     data_path = OUTPUT_DIR / "report_data.json"
-    with open(data_path, "w") as f:
+    with open(data_path, "w", encoding="utf-8") as f:
         f.write(safe_dumps(report_data, indent=2))
 
     pdf_path = OUTPUT_DIR / "executive-summary.pdf"
@@ -260,13 +369,13 @@ def generate_executive_summary(expert_review: str) -> str:
         project_root = Path(__file__).resolve().parent.parent.parent
         template_path = project_root / "templates" / "executive-summary.html"
 
-        with open(template_path) as f:
+        with open(template_path, encoding="utf-8") as f:
             template = Template(f.read())
 
         rendered = template.render(**report_data)
 
         html_output = pdf_path.with_suffix(".html")
-        html_output.write_text(rendered)
+        html_output.write_text(rendered, encoding="utf-8")
 
         try:
             from weasyprint import HTML
@@ -284,7 +393,6 @@ def download_file(url: str, filename: str, subfolder: str = "") -> str:
     """Download any file from a URL to data/.cache/raw/{subfolder}/{filename}."""
     from geospatial.ingestion.download import _download_file, _download_and_extract_zip
     from geospatial.config import DATA_RAW
-    import io, zipfile
 
     dest_dir = DATA_RAW / subfolder if subfolder else DATA_RAW
     dest_dir.mkdir(parents=True, exist_ok=True)
@@ -596,7 +704,9 @@ def generate_tier1_results() -> str:
 @mcp.tool()
 def siting_scan() -> str:
     """Start basin-detection siting scan as a background process. Returns immediately. Call siting_scan_status to check progress."""
-    import subprocess, sys, os
+    import os
+    import subprocess
+    import sys
 
     tier1_path = DATA_PROCESSED / "siting_tier1.json"
     if not tier1_path.exists():
@@ -612,18 +722,24 @@ def siting_scan() -> str:
 
     if pid_path.exists():
         pid = int(pid_path.read_text().strip())
-        try:
-            os.kill(pid, 0)
+        if _pid_alive(pid):
             return safe_dumps({"status": "already_running", "pid": pid, "message": "Scan already in progress. Call siting_scan_status to check."})
-        except OSError:
-            pid_path.unlink()
+        pid_path.unlink()
 
     script = Path(__file__).resolve().parent / "siting" / "run_scan.py"
-    with open(log_path, "w") as log:
+    cwd = str(Path(__file__).resolve().parent.parent.parent)
+    detach_kwargs = (
+        {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS}
+        if sys.platform == "win32"
+        else {"start_new_session": True}
+    )
+
+    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8", "PYTHONUNBUFFERED": "1"}
+    with open(log_path, "w", encoding="utf-8") as log:
         proc = subprocess.Popen(
-            [sys.executable, str(script), active_file],
-            stdout=log, stderr=log,
-            cwd=str(Path(__file__).resolve().parent.parent.parent),
+            [sys.executable, str(script), str(active_file)],
+            stdout=log, stderr=log, cwd=cwd, env=env,
+            **detach_kwargs,
         )
     pid_path.write_text(str(proc.pid))
 
@@ -643,8 +759,6 @@ def siting_scan() -> str:
 @mcp.tool()
 def siting_scan_status() -> str:
     """Check progress of a running siting scan. Returns status, last log lines, and results summary when complete."""
-    import os
-
     pid_path = DATA_PROCESSED / "siting_scan.pid"
     log_path = DATA_PROCESSED / "siting_scan.log"
     candidates_path = DATA_PROCESSED / "siting_candidates.json"
@@ -654,15 +768,14 @@ def siting_scan_status() -> str:
     pid = None
     if pid_path.exists():
         pid = int(pid_path.read_text().strip())
-        try:
-            os.kill(pid, 0)
+        if _pid_alive(pid):
             running = True
-        except OSError:
+        else:
             pid_path.unlink()
 
     last_lines = []
     if log_path.exists():
-        lines = log_path.read_text().splitlines()
+        lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
         last_lines = lines[-20:]
 
     progress = None

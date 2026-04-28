@@ -4,6 +4,12 @@
 
 AI-powered geospatial screening tool. Evaluates existing dams for pumped storage hydropower (PSH) potential. Finds dam pairs where pumped storage is technically viable and cost-competitive with battery storage. Currently configured for Morocco, extensible to any country.
 
+## Platform
+
+Run `uname` once at the start of every session.
+- Mac or Linux (`Darwin` / `Linux`): use the `mcp__geospatial__*` tools.
+- Windows (`MINGW`, `CYGWIN`, `Windows_NT`, or `uname` not found): the MCP server is unreliable. Never call `mcp__geospatial__*` tools. Use the CLI fallback for every geospatial operation: `.venv/Scripts/python.exe mcp-servers/geospatial/cli.py <tool> [--arg value ...]`. Subcommand names and arg names match MCP tools exactly. JSON result is on stdout, logs are on stderr.
+
 ## Architecture
 
 ```

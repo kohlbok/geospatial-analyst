@@ -2,6 +2,23 @@
 
 Collect dam and water body data for a country from global databases and user-provided sources.
 
+## Platform
+
+Before doing anything else, run `uname` once to decide which interface to use for the rest of this command:
+- Output starts with `Darwin` or `Linux`: use the `mcp__geospatial__*` tools as written below.
+- Output contains `MINGW`, `MSYS`, `CYGWIN`, `Windows_NT`, or `uname` is not found: the MCP server is unreliable on Windows. Use the CLI fallback instead. Every MCP tool below has an exact CLI equivalent:
+
+  ```
+  .venv/Scripts/python.exe mcp-servers/geospatial/cli.py <tool_name> [--arg value ...]
+  ```
+
+  Subcommand names match MCP tool names exactly. Keyword args become `--name value` flags. JSON output is printed to stdout — parse it the same as the MCP response. Examples:
+  - `mcp__geospatial__download_file(url="...", filename="x.zip")` → `... cli.py download_file --url ... --filename x.zip`
+  - `mcp__geospatial__parse_tabular(path=..., column_mapping='{"name":"Dam"}', output_name="grand")` → `... cli.py parse_tabular --path ... --column_mapping '{"name":"Dam"}' --output_name grand`
+  - `mcp__geospatial__merge_sources()` → `... cli.py merge_sources`
+
+  For each step below, translate every `mcp__geospatial__<tool>(args...)` call into the equivalent CLI invocation.
+
 ## Skills
 
 Load: data-sources, data-collection-workflow, visual-review

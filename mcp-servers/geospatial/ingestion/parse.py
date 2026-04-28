@@ -43,8 +43,8 @@ def parse_tabular(path, column_mapping, filters=None, output_name="parsed"):
 
     STAGING_DIR.mkdir(parents=True, exist_ok=True)
     out_path = STAGING_DIR / f"{output_name}.json"
-    with open(out_path, "w") as f:
-        json.dump(records, f, indent=2, default=str)
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(records, f, indent=2, default=str, ensure_ascii=False)
 
     from .staging import save_staged_source
     save_staged_source(output_name, records)
@@ -85,7 +85,7 @@ def _read_file(path, fmt):
             import geopandas as gpd
             return gpd.read_file(path)
         elif fmt == "json":
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
             if isinstance(data, list):
                 return pd.DataFrame(data)
